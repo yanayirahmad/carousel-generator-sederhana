@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Carousel Generator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+  .slide-frame {
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+    border-radius: 8px;
+    background: #f1f5f9;
+  }
+  .slide-canvas {
+    transform-origin: top left;
+    position: absolute;
+    top: 0; left: 0;
+  }
+  .status-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+  .spinner {
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  input[type="color"] { -webkit-appearance: none; padding: 0; border: none; }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type="color"]::-webkit-color-swatch { border: 1px solid #cbd5e1; border-radius: 6px; }
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<div class="flex flex-col lg:flex-row min-h-screen">
+
+  <!-- ============ SIDEBAR KIRI ============ -->
+  <aside class="w-full lg:w-[380px] shrink-0 bg-white border-r border-slate-200 p-5 lg:h-screen lg:overflow-y-auto lg:sticky lg:top-0">
+    <h1 class="text-xl font-bold text-slate-900 mb-1">🎨 AI Carousel Generator</h1>
+    <p class="text-sm text-slate-500 mb-5">Art Director otomatis untuk carousel Instagram (4:5)</p>
+
+    <!-- API KEY -->
+    <div class="mb-5">
+      <label class="block text-sm font-semibold mb-1.5">Google Gemini API Key</label>
+      <div class="flex gap-2">
+        <input id="apiKeyInput" type="password" placeholder="AIza..."
+          class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        <button id="toggleKeyBtn" type="button" class="px-3 py-2 border border-slate-300 rounded-lg text-sm hover:bg-slate-50">👁️</button>
+      </div>
+      <p class="text-xs text-slate-400 mt-1">Sistem menggunakan Google Gemini API (Model: <b>Gemini Flash (terbaru)</b>). Disimpan hanya di browser Anda (localStorage).</p>
+    </div>
+
+    <!-- UKURAN SLIDE -->
+    <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
+      <label class="block text-sm font-semibold mb-2">Ukuran Slide</label>
+      <div class="grid grid-cols-2 gap-2">
+        <label class="flex items-center justify-center gap-2 border border-slate-300 rounded-lg py-2 text-sm cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+          <input type="radio" name="slideRatio" value="4:5" checked class="accent-indigo-600"> 4:5 (Vertikal)
+        </label>
+        <label class="flex items-center justify-center gap-2 border border-slate-300 rounded-lg py-2 text-sm cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+          <input type="radio" name="slideRatio" value="1:1" class="accent-indigo-600"> 1:1 (Persegi)
+        </label>
+      </div>
+      <p class="text-xs text-slate-400 mt-1.5">4:5 → 1080×1350px, 1:1 → 1080×1080px. Ganti ukuran perlu generate ulang semua slide.</p>
+    </div>
+
+    <!-- TEKS INPUT -->
+    <div class="mb-5">
+      <label class="block text-sm font-semibold mb-1.5">Konten Teks per Slide</label>
+      <textarea id="rawTextArea" rows="10" placeholder="Slide 1: teks di sini...&#10;---&#10;Slide 2: teks di sini (bisa Arab: بسم الله الرحمن الرحيم)&#10;---&#10;Slide 3..."
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" dir="auto"></textarea>
+      <p class="text-xs text-slate-400 mt-1">Pisahkan tiap slide dengan baris berisi <code class="bg-slate-100 px-1 rounded">---</code></p>
+    </div>
+
+    <!-- STYLING MANUAL -->
+    <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
+      <p class="text-sm font-semibold mb-2">Styling Manual (opsional)</p>
+      <div class="grid grid-cols-3 gap-2 mb-2">
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">Background</label>
+          <div class="flex items-center gap-1">
+            <input id="manualBg" type="color" value="#ffffff" class="w-8 h-8">
+            <input id="manualBgHex" type="text" value="#ffffff" class="w-full border border-slate-300 rounded px-1.5 py-1 text-xs">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">Teks</label>
+          <div class="flex items-center gap-1">
+            <input id="manualText" type="color" value="#111111" class="w-8 h-8">
+            <input id="manualTextHex" type="text" value="#111111" class="w-full border border-slate-300 rounded px-1.5 py-1 text-xs">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">Accent</label>
+          <div class="flex items-center gap-1">
+            <input id="manualAccent" type="color" value="#6366f1" class="w-8 h-8">
+            <input id="manualAccentHex" type="text" value="#6366f1" class="w-full border border-slate-300 rounded px-1.5 py-1 text-xs">
+          </div>
+        </div>
+      </div>
+      <label class="flex items-center gap-2 text-xs text-slate-500">
+        <input id="useManualColors" type="checkbox" class="rounded"> Paksa AI pakai warna manual ini sebagai acuan utama
+      </label>
+    </div>
+
+    <!-- SAMPLE IMAGE -->
+    <div class="mb-5">
+      <label class="block text-sm font-semibold mb-1.5">Gambar Sampel Gaya (opsional)</label>
+      <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center text-xs text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-indigo-500 transition">
+        <div id="dropZoneText">Klik atau drag & drop gambar referensi ke sini<br>(AI akan menganalisis palet warnanya)</div>
+        <img id="sampleImgPreview" class="hidden mx-auto mt-2 max-h-32 rounded-lg">
+      </div>
+      <input id="sampleImgInput" type="file" accept="image/*" class="hidden">
+      <button id="removeSampleBtn" class="hidden mt-1 text-xs text-red-500 hover:underline">Hapus gambar sampel</button>
+    </div>
+
+    <!-- WATERMARK -->
+    <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
+      <label class="block text-sm font-semibold mb-1.5">Watermark / Nama Akun (opsional)</label>
+      <input id="watermarkInput" type="text" placeholder="@nama.akun atau Nama Brand"
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 mb-2">
+      <label class="block text-xs text-slate-500 mb-1">Posisi Watermark</label>
+      <select id="watermarkPositionSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        <option value="top-left">Kiri Atas</option>
+        <option value="top-center">Tengah Atas</option>
+        <option value="top-right">Kanan Atas</option>
+        <option value="bottom-left">Kiri Bawah</option>
+        <option value="bottom-center">Tengah Bawah</option>
+        <option value="bottom-right">Kanan Bawah</option>
+      </select>
+      <p class="text-xs text-slate-400 mt-1">Otomatis muncul kecil di posisi terpilih pada tiap slide. Posisi bawah otomatis digeser agar tidak menabrak indikator dots/panah.</p>
+    </div>
+
+    <!-- RTL TOGGLE -->
+    <div class="mb-5">
+      <label class="flex items-center gap-2 text-sm">
+        <input id="forceRtl" type="checkbox" class="rounded">
+        Paksa RTL untuk semua slide (default: deteksi otomatis dari teks Arab)
+      </label>
+    </div>
+
+    <button id="generateBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-sm shadow-sm transition flex items-center justify-center gap-2">
+      ✨ Generate Semua Slide
+    </button>
+    <div id="sidebarError" class="hidden mt-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2"></div>
+  </aside>
+
+  <!-- ============ WORKSPACE KANAN ============ -->
+  <main class="flex-1 p-5 lg:p-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+      <div>
+        <h2 class="text-lg font-bold">Workspace Preview</h2>
+        <p class="text-sm text-slate-500">Ekspor akhir: 1080 × 1350 px (rasio 4:5)</p>
+      </div>
+      <button id="downloadAllBtn" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm">
+        ⬇️ Download Semua Slide
+      </button>
+    </div>
+
+    <div id="emptyState" class="text-center text-slate-400 py-24">
+      <p class="text-4xl mb-2">🖼️</p>
+      <p class="text-sm">Masukkan teks di sidebar kiri lalu klik "Generate Semua Slide"</p>
+    </div>
+
+    <div id="slidesContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+  </main>
+</div>
+
+<!-- sandbox tersembunyi untuk render resolusi penuh saat capture -->
+<div id="captureSandbox" style="position:absolute; left:-99999px; top:0; width:1080px; height:1350px; overflow:visible;"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  const PREVIEW_WIDTH = 300;   // lebar tampilan preview di layar (px)
+  let EXPORT_WIDTH = 1080;
+  let EXPORT_HEIGHT = 1350;
+  let PREVIEW_SCALE = PREVIEW_WIDTH / EXPORT_WIDTH;
+  let PREVIEW_HEIGHT = EXPORT_HEIGHT * PREVIEW_SCALE;
+
+  function applyChosenRatio(){
+    const ratio = document.querySelector('input[name="slideRatio"]:checked').value;
+    if (ratio === '1:1'){
+      EXPORT_WIDTH = 1080; EXPORT_HEIGHT = 1080;
+    } else {
+      EXPORT_WIDTH = 1080; EXPORT_HEIGHT = 1350;
+    }
+    PREVIEW_SCALE = PREVIEW_WIDTH / EXPORT_WIDTH;
+    PREVIEW_HEIGHT = EXPORT_HEIGHT * PREVIEW_SCALE;
+  }
+
+  const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+  // ---------- STATE ----------
+  let slides = []; // {id, rawText, design, status, errorMsg, isRtl}
+  let sampleImageDataUrl = null;
+
+  // ---------- ELEMENTS ----------
+  const apiKeyInput = document.getElementById('apiKeyInput');
+  const toggleKeyBtn = document.getElementById('toggleKeyBtn');
+  const rawTextArea = document.getElementById('rawTextArea');
+  const generateBtn = document.getElementById('generateBtn');
+  const downloadAllBtn = document.getElementById('downloadAllBtn');
+  const slidesContainer = document.getElementById('slidesContainer');
+  const emptyState = document.getElementById('emptyState');
+  const sidebarError = document.getElementById('sidebarError');
+  const captureSandbox = document.getElementById('captureSandbox');
+
+  const manualBg = document.getElementById('manualBg');
+  const manualBgHex = document.getElementById('manualBgHex');
+  const manualText = document.getElementById('manualText');
+  const manualTextHex = document.getElementById('manualTextHex');
+  const manualAccent = document.getElementById('manualAccent');
+  const manualAccentHex = document.getElementById('manualAccentHex');
+  const useManualColors = document.getElementById('useManualColors');
+
+  const dropZone = document.getElementById('dropZone');
+  const dropZoneText = document.getElementById('dropZoneText');
+  const sampleImgInput = document.getElementById('sampleImgInput');
+  const sampleImgPreview = document.getElementById('sampleImgPreview');
+  const removeSampleBtn = document.getElementById('removeSampleBtn');
+  const forceRtl = document.getElementById('forceRtl');
+  const watermarkInput = document.getElementById('watermarkInput');
+  const watermarkPositionSelect = document.getElementById('watermarkPositionSelect');
+
+  // ---------- INIT ----------
+  function init(){
+    const savedKey = localStorage.getItem('ai_carousel_gemini_key');
+    if (savedKey) apiKeyInput.value = savedKey;
+    apiKeyInput.addEventListener('input', () => {
+      localStorage.setItem('ai_carousel_gemini_key', apiKeyInput.value.trim());
+    });
+  }
+
+  toggleKeyBtn.addEventListener('click', () => {
+    apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
+    toggleKeyBtn.textContent = apiKeyInput.type === 'password' ? '👁️' : '🙈';
+  });
+
+  // sync color pickers <-> hex text fields
+  function bindColorPair(colorEl, hexEl){
+    colorEl.addEventListener('input', () => { hexEl.value = colorEl.value; });
+    hexEl.addEventListener('change', () => {
+      let v = hexEl.value.trim();
+      if (!v.startsWith('#')) v = '#' + v;
+      if (/^#[0-9A-Fa-f]{6}$/.test(v)) { colorEl.value = v; hexEl.value = v; }
+      else { hexEl.value = colorEl.value; }
+    });
+  }
+  bindColorPair(manualBg, manualBgHex);
+  bindColorPair(manualText, manualTextHex);
+  bindColorPair(manualAccent, manualAccentHex);
+
+  // ---------- SAMPLE IMAGE ----------
+  dropZone.addEventListener('click', () => sampleImgInput.click());
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-400'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-400'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-indigo-400');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleSampleFile(e.dataTransfer.files[0]);
+  });
+  sampleImgInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) handleSampleFile(e.target.files[0]);
+  });
+  function handleSampleFile(file){
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      sampleImageDataUrl = ev.target.result;
+      sampleImgPreview.src = sampleImageDataUrl;
+      sampleImgPreview.classList.remove('hidden');
+      dropZoneText.classList.add('hidden');
+      removeSampleBtn.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+  }
+  removeSampleBtn.addEventListener('click', () => {
+    sampleImageDataUrl = null;
+    sampleImgPreview.classList.add('hidden');
+    dropZoneText.classList.remove('hidden');
+    removeSampleBtn.classList.add('hidden');
+    sampleImgInput.value = '';
+  });
+
+  // ---------- HELPERS ----------
+  function showSidebarError(msg){
+    sidebarError.textContent = msg;
+    sidebarError.classList.remove('hidden');
+  }
+  function clearSidebarError(){
+    sidebarError.classList.add('hidden');
+    sidebarError.textContent = '';
+  }
+  function containsArabic(text){ return ARABIC_REGEX.test(text); }
+
+  function parseSlidesFromText(text){
+    const parts = text.split(/\r?\n\s*-{3,}\s*\r?\n|^\s*-{3,}\s*$/gm)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    return parts;
+  }
+
+  // ---------- SYSTEM PROMPT ----------
+  function buildSystemPrompt(){
+    const ratioLabel = EXPORT_WIDTH === EXPORT_HEIGHT ? '1:1 (persegi)' : '4:5 (vertikal)';
+    return `Anda adalah seorang Art Director & Graphic Designer profesional yang mendesain slide carousel Instagram berukuran ${EXPORT_WIDTH}x${EXPORT_HEIGHT}px (rasio ${ratioLabel}), dengan gaya editorial modern (mirip desain carousel edukasi/motivasi populer: tipografi berlapis, ada penekanan visual, tidak monoton).
+Kanvas kali ini berukuran ${EXPORT_WIDTH}x${EXPORT_HEIGHT}px. Sesuaikan ukuran font, padding, dan jumlah/ukuran dekorasi dengan proporsi kanvas ini (kanvas ${ratioLabel === '1:1 (persegi)' ? 'lebih pendek dari versi vertikal, jadi hindari memaksakan terlalu banyak blok teks berukuran besar agar tidak overflow' : 'cukup tinggi untuk hierarki teks yang lebih leluasa'}).
+Anda akan menerima teks konten mentah untuk SATU slide (bisa berisi teks Arab dan/atau Latin, bisa campuran).
+Tugas Anda HANYA mengembalikan SATU objek JSON valid (tanpa markdown code fence, tanpa penjelasan tambahan, tanpa teks lain apapun di luar JSON) dengan struktur PERSIS sebagai berikut:
+
+{
+  "background_color": "#RRGGBB",
+  "background_gradient": null,
+  "text_color": "#RRGGBB",
+  "accent_color": "#RRGGBB",
+  "highlight_color": "#RRGGBB",
+  "text_align": "center",
+  "vertical_position": "center",
+  "padding_px": 90,
+  "line_height": 1.4,
+  "is_rtl": false,
+  "content_image_placement": null,
+  "content_blocks": [
+    {
+      "text": "potongan teks (kata/frasa/kalimat pendek)",
+      "role": "heading",
+      "font_size_px": 64,
+      "font_weight": "bold",
+      "highlight": false,
+      "icon": null
+    },
+    {
+      "text": "potongan teks lain",
+      "role": "body",
+      "font_size_px": 34,
+      "font_weight": "normal",
+      "highlight": true,
+      "icon": "✨"
+    }
+  ],
+  "decorations": [
+    {
+      "type": "circle",
+      "top_pct": 5,
+      "left_pct": 5,
+      "width_px": 120,
+      "height_px": 120,
+      "color": "#RRGGBB",
+      "opacity": 0.15,
+      "rotation_deg": 0
+    }
+  ]
+}
+
+Jika ingin memakai gradient, isi "background_gradient" dengan objek {"from":"#hex","to":"#hex","direction":"to bottom"} dan "background_color" tetap diisi warna solid fallback.
+
+Aturan wajib untuk "content_blocks" (INI KUNCI UTAMA agar desain terasa modern, jangan dilewati):
+1. WAJIB memecah teks asli slide menjadi BEBERAPA blok terpisah (minimal 2 blok jika teks cukup panjang, boleh 1 blok jika teks sangat pendek seperti satu kata). JANGAN mengubah, menambah, atau menghilangkan kata dari teks asli — hanya memecahnya per kalimat/frasa/kata kunci. Gabungan seluruh "text" di semua blok harus tetap merepresentasikan teks asli secara utuh dan berurutan.
+2. "role" salah satu dari "heading" (judul/kata kunci paling penting, font besar 56-80px, font_weight bold), "subheading" (poin penting kedua, 36-48px, bold/semibold), "body" (isi/penjelasan, 26-36px, normal), atau "caption" (catatan kecil/sumber/tambahan, 18-24px, normal).
+3. Untuk teks yang panjang (lebih dari satu kalimat), SELALU coba temukan 1 kata atau frasa pendek yang paling penting untuk dijadikan blok "heading" tersendiri agar ada hierarki visual, jangan jadikan semua teks dalam satu blok "body" datar.
+4. "highlight": true HANYA untuk 1-3 blok paling penting per slide (kata/frasa kunci yang ingin ditonjolkan seperti diberi stabilo). Jangan highlight semua blok atau tidak ada highlight sama sekali kalau teks cukup panjang untuk punya poin penting.
+5. "icon": isi dengan SATU emoji yang relevan secara makna sebagai ilustrasi sederhana pendamping teks (opsional, gunakan pada maksimal 1-2 blok yang paling cocok, isi null jika tidak relevan). Jangan paksakan emoji jika tidak ada yang benar-benar relevan.
+6. Urutan array "content_blocks" merepresentasikan urutan tampil dari atas ke bawah (atau kanan ke kiri urutan logis jika is_rtl true).
+
+Aturan wajib untuk "content_image_placement":
+7. Field ini HANYA diisi (bukan null) jika pesan user secara eksplisit menyebutkan ada GAMBAR KONTEN yang dilampirkan untuk slide ini (biasanya muncul di pesan revisi lanjutan, bukan di generate awal). Jika tidak ada gambar konten yang disebutkan, WAJIB isi null.
+8. Jika diisi, formatnya: {"position": "top"|"bottom"|"left"|"right", "size_pct": number (25-55)} — "position" adalah sisi kanvas mana yang dipakai untuk gambar (pertimbangkan orientasi gambar: gambar landscape/lebar lebih cocok "top"/"bottom", gambar potret/tinggi lebih cocok "left"/"right"), dan "size_pct" adalah persentase luas kanvas yang dipakai gambar.
+9. Kalau "content_image_placement" diisi, WAJIB sesuaikan "padding_px", "vertical_position", dan susunan "content_blocks" supaya teks tidak bertumpuk dengan area yang direservasi untuk gambar tersebut (mis. kalau gambar di "bottom" dengan size_pct 40, taruh vertical_position "top" dan pastikan teks muat di 60% area atas).
+10. Gambar konten ini BUKAN untuk dianalisis warnanya dan BUKAN untuk mempengaruhi palet warna slide — ini beda dengan gambar sampel gaya (kalau ada) yang memang dipakai untuk analisis warna. Jangan campur adukkan dua hal ini.
+
+Aturan wajib lainnya:
+11. background_color dan text_color WAJIB kontras tinggi agar teks sangat mudah dibaca. "highlight_color" harus tetap membuat teks di atasnya terbaca jelas (biasanya warna terang/pastel jika text_color gelap, atau warna gelap jika text_color terang).
+12. Jika teks konten mengandung karakter Arab, "is_rtl" HARUS true, dan "text_align" default "right" kecuali konteks menuntut lain.
+13. "decorations" maksimal 4 elemen dekoratif (garis, lingkaran, atau persegi) yang mempercantik slide TANPA menutupi area teks utama, dan TANPA menutupi area "content_image_placement" jika ada. type hanya boleh "circle", "rectangle", atau "line".
+14. Jika user memberi warna manual sebagai acuan utama, WAJIB gunakan warna tersebut (atau turunannya yang harmonis) untuk background_color/text_color/accent_color/highlight_color.
+15. Jika disertakan gambar sampel gaya (bukan gambar konten), analisis palet warna dominan & mood gambar tersebut, lalu padukan dengan warna manual (jika ada) untuk membangun palet slide.
+16. "vertical_position" salah satu dari "top", "center", "bottom" — sesuaikan dengan komposisi paling estetis untuk teks tersebut.
+17. HANYA kembalikan objek JSON valid tersebut, tidak ada teks lain, tidak ada markdown.`;
+  }
+
+
+  function buildUserMessageParts(rawText, extra){
+    let manualColorNote = '';
+    if (useManualColors.checked){
+      manualColorNote = `\n\nWarna manual yang WAJIB dijadikan acuan utama:\n- Background: ${manualBgHex.value}\n- Teks: ${manualTextHex.value}\n- Accent: ${manualAccentHex.value}`;
+    }
+    const forceRtlNote = forceRtl.checked ? '\n\nCatatan: paksa is_rtl = true untuk slide ini.' : '';
+    const textBlock = `Teks konten untuk slide ini:\n"""${rawText}"""${manualColorNote}${forceRtlNote}${extra || ''}`;
+
+    if (sampleImageDataUrl){
+      const match = sampleImageDataUrl.match(/^data:(.+?);base64,(.+)$/);
+      if (match){
+        const mimeType = match[1];
+        const base64Data = match[2];
+        return [
+          { text: textBlock + '\n\nBerikut gambar sampel gaya/mood yang harus dianalisis palet warnanya:' },
+          { inline_data: { mime_type: mimeType, data: base64Data } }
+        ];
+      }
+    }
+    return [{ text: textBlock }];
+  }
+
+  // ---------- GEMINI CALL ----------
+  const GEMINI_MODEL = 'gemini-flash-latest';
+
+  async function callGemini(contents){
+    const apiKey = apiKeyInput.value.trim();
+    if (!apiKey) throw new Error('API Key belum diisi.');
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: contents,
+        systemInstruction: { parts: [{ text: buildSystemPrompt() }] },
+        generationConfig: {
+          temperature: 0.85,
+          responseMimeType: 'application/json',
+          maxOutputTokens: 8192,
+          thinkingConfig: { thinkingLevel: 'low' }
+        }
+      })
+    });
+    if (!response.ok){
+      let errMsg = `HTTP ${response.status}`;
+      try {
+        const errJson = await response.json();
+        if (errJson.error && errJson.error.message) errMsg = errJson.error.message;
+      } catch(e){}
+      throw new Error(errMsg);
+    }
+    const data = await response.json();
+    const candidate = data.candidates && data.candidates[0];
+    const content = candidate && candidate.content && candidate.content.parts && candidate.content.parts[0]
+      ? candidate.content.parts[0].text
+      : null;
+    if (!content){
+      const finishReason = candidate && candidate.finishReason;
+      if (finishReason === 'MAX_TOKENS'){
+        throw new Error('Respons AI terpotong (kehabisan token). Coba klik "Coba Lagi".');
+      }
+      throw new Error('Gemini tidak mengembalikan respons yang valid (kemungkinan diblokir oleh safety filter).');
+    }
+    try {
+      return JSON.parse(content);
+    } catch(e){
+      console.error('Gagal parse JSON dari AI:', content);
+      throw new Error('AI mengembalikan format JSON yang tidak valid. Coba klik "Coba Lagi".');
+    }
+  }
+
+  async function generateDesignForSlide(rawText, isRtlHint){
+    const contents = [
+      { role: 'user', parts: buildUserMessageParts(rawText, isRtlHint ? '\n\nCatatan: teks ini terdeteksi mengandung karakter Arab.' : '') }
+    ];
+    return await callGemini(contents);
+  }
+
+  async function reviseDesignForSlide(rawText, previousDesign, instruction, contentImageDataUrl){
+    const revisionParts = [];
+    let instructionText = instruction && instruction.trim()
+      ? `Tolong revisi desain JSON di atas sesuai instruksi berikut, lalu kembalikan LAGI objek JSON LENGKAP dengan struktur yang sama (jangan hanya kirim bagian yang berubah):\n\nInstruksi revisi: "${instruction}"`
+      : `Tolong kembalikan LAGI objek JSON LENGKAP dengan struktur yang sama (jangan hanya kirim bagian yang berubah), sesuaikan dengan catatan tambahan di bawah ini.`;
+
+    if (contentImageDataUrl){
+      const match = contentImageDataUrl.match(/^data:(.+?);base64,(.+)$/);
+      instructionText += `\n\nCATATAN PENTING: slide ini SEKARANG akan menampilkan sebuah gambar KONTEN yang disediakan user (misalnya diagram/foto penjelas, BUKAN sekadar dekorasi, dan BUKAN untuk dianalisis warnanya). Lihat gambar terlampir untuk membantu menentukan tata letak terbaik, lalu isi field "content_image_placement" pada JSON (lihat definisi field ini di instruksi sistem) dan susun ulang "content_blocks" serta "padding_px"/"vertical_position" supaya teks TIDAK bertumpuk dengan area gambar tersebut.`;
+      revisionParts.push({ text: instructionText });
+      if (match){
+        revisionParts.push({ inline_data: { mime_type: match[1], data: match[2] } });
+      }
+    } else {
+      revisionParts.push({ text: instructionText });
+    }
+
+    const contents = [
+      { role: 'user', parts: buildUserMessageParts(rawText) },
+      { role: 'model', parts: [{ text: JSON.stringify(previousDesign) }] },
+      { role: 'user', parts: revisionParts }
+    ];
+    return await callGemini(contents);
+  }
+
+  // ---------- RENDER SLIDE DOM (full resolution 1080x1350) ----------
+  function buildSlideCanvasNode(design, rawText, slideIndex, totalSlides, contentImageDataUrl){
+    const canvas = document.createElement('div');
+    canvas.style.width = EXPORT_WIDTH + 'px';
+    canvas.style.height = EXPORT_HEIGHT + 'px';
+    canvas.style.position = 'relative';
+    canvas.style.overflow = 'hidden';
+    canvas.style.boxSizing = 'border-box';
+    canvas.style.fontFamily = "'Calibri', sans-serif";
+    canvas.dir = design.is_rtl ? 'rtl' : 'ltr';
+
+    if (design.background_gradient && design.background_gradient.from && design.background_gradient.to){
+      const dir = design.background_gradient.direction || 'to bottom';
+      canvas.style.background = `linear-gradient(${dir}, ${design.background_gradient.from}, ${design.background_gradient.to})`;
+    } else {
+      canvas.style.backgroundColor = design.background_color || '#ffffff';
+    }
+
+    // decorations
+    (design.decorations || []).forEach(dec => {
+      const el = document.createElement('div');
+      el.style.position = 'absolute';
+      el.style.top = (dec.top_pct != null ? dec.top_pct : 0) + '%';
+      el.style.left = (dec.left_pct != null ? dec.left_pct : 0) + '%';
+      el.style.width = (dec.width_px || 100) + 'px';
+      el.style.height = (dec.type === 'line' ? (dec.height_px || 6) : (dec.height_px || dec.width_px || 100)) + 'px';
+      el.style.backgroundColor = dec.color || (design.accent_color || '#000000');
+      el.style.opacity = (dec.opacity != null ? dec.opacity : 0.2);
+      el.style.transform = `rotate(${dec.rotation_deg || 0}deg)`;
+      el.style.borderRadius = dec.type === 'circle' ? '50%' : (dec.type === 'rectangle' ? '4px' : '0');
+      el.style.pointerEvents = 'none';
+      canvas.appendChild(el);
+    });
+
+    // ---- gambar konten (user-provided, mis. diagram makhraj huruf) ----
+    if (contentImageDataUrl){
+      const placement = design.content_image_placement || { position: 'bottom', size_pct: 35 };
+      const sizePct = placement.size_pct || 35;
+      const imgEl = document.createElement('img');
+      imgEl.src = contentImageDataUrl;
+      imgEl.style.position = 'absolute';
+      imgEl.style.objectFit = 'contain';
+      imgEl.style.borderRadius = '12px';
+
+      if (placement.position === 'top'){
+        imgEl.style.top = '0'; imgEl.style.left = '0'; imgEl.style.right = '0';
+        imgEl.style.width = '100%'; imgEl.style.height = sizePct + '%';
+      } else if (placement.position === 'left'){
+        imgEl.style.top = '0'; imgEl.style.bottom = '0'; imgEl.style.left = '0';
+        imgEl.style.height = '100%'; imgEl.style.width = sizePct + '%';
+      } else if (placement.position === 'right'){
+        imgEl.style.top = '0'; imgEl.style.bottom = '0'; imgEl.style.right = '0';
+        imgEl.style.height = '100%'; imgEl.style.width = sizePct + '%';
+      } else { // bottom (default)
+        imgEl.style.bottom = '0'; imgEl.style.left = '0'; imgEl.style.right = '0';
+        imgEl.style.width = '100%'; imgEl.style.height = sizePct + '%';
+      }
+      canvas.appendChild(imgEl);
+    }
+
+    // ---- text container ----
+    const textWrap = document.createElement('div');
+    textWrap.style.position = 'absolute';
+    textWrap.style.left = '0';
+    textWrap.style.right = '0';
+    textWrap.style.top = '0';
+    textWrap.style.bottom = '0';
+    textWrap.style.padding = (design.padding_px != null ? design.padding_px : 90) + 'px';
+    textWrap.style.boxSizing = 'border-box';
+    textWrap.style.display = 'flex';
+    textWrap.style.flexDirection = 'column';
+    textWrap.style.gap = '18px';
+    textWrap.style.width = '100%';
+    textWrap.style.height = '100%';
+
+    const vpos = design.vertical_position || 'center';
+    textWrap.style.justifyContent = vpos === 'top' ? 'flex-start' : (vpos === 'bottom' ? 'flex-end' : 'center');
+
+    const blocks = Array.isArray(design.content_blocks) && design.content_blocks.length > 0
+      ? design.content_blocks
+      : [{ text: rawText, role: 'body', font_size_px: 40, font_weight: 'normal', highlight: false, icon: null }];
+
+    blocks.forEach(block => {
+      const blockRow = document.createElement('div');
+      blockRow.style.display = 'flex';
+      blockRow.style.flexDirection = design.is_rtl ? 'row-reverse' : 'row';
+      blockRow.style.alignItems = 'center';
+      blockRow.style.justifyContent = design.text_align === 'left' ? 'flex-start' : (design.text_align === 'right' ? 'flex-end' : 'center');
+      blockRow.style.gap = '14px';
+      blockRow.style.flexWrap = 'wrap';
+
+      if (block.icon){
+        const iconEl = document.createElement('span');
+        iconEl.style.fontSize = Math.round((block.font_size_px || 36) * 1.15) + 'px';
+        iconEl.style.lineHeight = '1';
+        iconEl.textContent = block.icon;
+        blockRow.appendChild(iconEl);
+      }
+
+      const textSpan = document.createElement('span');
+      textSpan.textContent = block.text || '';
+      textSpan.style.color = block.color || design.text_color || '#111111';
+      textSpan.style.fontSize = (block.font_size_px || (block.role === 'heading' ? 60 : block.role === 'caption' ? 22 : 36)) + 'px';
+      textSpan.style.fontWeight = block.font_weight || (block.role === 'heading' || block.role === 'subheading' ? 'bold' : 'normal');
+      textSpan.style.lineHeight = design.line_height || 1.4;
+      textSpan.style.whiteSpace = 'pre-wrap';
+      textSpan.style.wordBreak = 'break-word';
+      textSpan.style.fontFamily = "'Calibri', sans-serif";
+
+      if (block.highlight){
+        textSpan.style.backgroundColor = design.highlight_color || design.accent_color || '#fde047';
+        textSpan.style.padding = '4px 14px';
+        textSpan.style.borderRadius = '8px';
+        textSpan.style.boxDecorationBreak = 'clone';
+        textSpan.style.webkitBoxDecorationBreak = 'clone';
+      }
+
+      blockRow.appendChild(textSpan);
+      textWrap.appendChild(blockRow);
+    });
+
+    canvas.appendChild(textWrap);
+
+    // ---- watermark (nama akun) + pagination: hitung dulu supaya tidak saling tabrakan ----
+    const watermarkText = (watermarkInput.value || '').trim();
+    const wmPosition = watermarkPositionSelect.value || 'top-left'; // top-left|top-center|top-right|bottom-left|bottom-center|bottom-right
+    const [wmVSide, wmHSide] = wmPosition.split('-');
+    const EDGE = 48;
+    const WM_RESERVE = 64; // ruang tambahan yang direservasi kalau watermark & dots/arrow berada di sisi bawah yang sama
+
+    let dotsBottomOffset = EDGE;
+    let arrowBottomOffset = 40;
+    if (watermarkText && wmVSide === 'bottom'){
+      if (wmHSide === 'center') dotsBottomOffset = EDGE + WM_RESERVE;
+      if (wmHSide === 'right') arrowBottomOffset = 40 + WM_RESERVE;
+    }
+
+    // ---- watermark ----
+    if (watermarkText){
+      const wm = document.createElement('div');
+      wm.style.position = 'absolute';
+      wm.style.display = 'flex';
+      wm.style.alignItems = 'center';
+      wm.style.gap = '8px';
+      wm.style.fontFamily = "'Calibri', sans-serif";
+      wm.style.fontSize = '24px';
+      wm.style.fontWeight = '600';
+      wm.style.letterSpacing = '0.5px';
+      wm.style.color = design.text_color || '#111111';
+      wm.style.opacity = '0.75';
+      wm.style.whiteSpace = 'nowrap';
+
+      if (wmVSide === 'top'){ wm.style.top = '44px'; wm.style.bottom = 'auto'; }
+      else { wm.style.bottom = EDGE + 'px'; wm.style.top = 'auto'; }
+
+      if (wmHSide === 'left'){ wm.style.left = '48px'; wm.style.right = 'auto'; }
+      else if (wmHSide === 'right'){ wm.style.right = '48px'; wm.style.left = 'auto'; }
+      else { wm.style.left = '50%'; wm.style.right = 'auto'; wm.style.transform = 'translateX(-50%)'; }
+
+      const dot = document.createElement('span');
+      dot.style.width = '8px';
+      dot.style.height = '8px';
+      dot.style.borderRadius = '50%';
+      dot.style.backgroundColor = design.accent_color || '#6366f1';
+      dot.style.display = 'inline-block';
+      dot.style.flexShrink = '0';
+      wm.appendChild(dot);
+
+      const wmText = document.createElement('span');
+      wmText.textContent = watermarkText;
+      wm.appendChild(wmText);
+
+      canvas.appendChild(wm);
+    }
+
+    // ---- pagination dots + arrow ----
+    if (totalSlides && totalSlides > 1){
+      const dotsWrap = document.createElement('div');
+      dotsWrap.style.position = 'absolute';
+      dotsWrap.style.bottom = dotsBottomOffset + 'px';
+      dotsWrap.style.left = '0';
+      dotsWrap.style.right = '0';
+      dotsWrap.style.display = 'flex';
+      dotsWrap.style.justifyContent = 'center';
+      dotsWrap.style.alignItems = 'center';
+      dotsWrap.style.gap = '10px';
+
+      for (let i = 0; i < totalSlides; i++){
+        const dot = document.createElement('span');
+        const isActive = i === slideIndex;
+        dot.style.height = '14px';
+        dot.style.borderRadius = '999px';
+        dot.style.transition = 'none';
+        dot.style.backgroundColor = isActive ? (design.accent_color || '#6366f1') : (design.text_color || '#111111');
+        dot.style.opacity = isActive ? '1' : '0.3';
+        dot.style.width = isActive ? '34px' : '14px';
+        dotsWrap.appendChild(dot);
+      }
+      canvas.appendChild(dotsWrap);
+
+      if (slideIndex < totalSlides - 1){
+        const arrowBadge = document.createElement('div');
+        arrowBadge.style.position = 'absolute';
+        arrowBadge.style.bottom = arrowBottomOffset + 'px';
+        arrowBadge.style.right = '48px';
+        arrowBadge.style.width = '64px';
+        arrowBadge.style.height = '64px';
+        arrowBadge.style.borderRadius = '50%';
+        arrowBadge.style.backgroundColor = design.accent_color || '#6366f1';
+        arrowBadge.style.display = 'flex';
+        arrowBadge.style.alignItems = 'center';
+        arrowBadge.style.justifyContent = 'center';
+        arrowBadge.style.boxShadow = '0 4px 14px rgba(0,0,0,0.25)';
+
+        const arrowIcon = document.createElement('span');
+        arrowIcon.textContent = '→';
+        arrowIcon.style.color = '#ffffff';
+        arrowIcon.style.fontSize = '30px';
+        arrowIcon.style.fontWeight = 'bold';
+        arrowIcon.style.lineHeight = '1';
+        arrowBadge.appendChild(arrowIcon);
+
+        canvas.appendChild(arrowBadge);
+      }
+    }
+
+    return canvas;
+  }
+
+
+  // ---------- SLIDE UI BLOCKS ----------
+  function createSlideBlock(index){
+    const wrapper = document.createElement('div');
+    wrapper.id = `slide-block-${index}`;
+    wrapper.className = 'bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center';
+
+    wrapper.innerHTML = `
+      <div class="w-full flex items-center justify-between mb-2">
+        <span class="text-xs font-semibold text-slate-500">Slide ${index + 1}</span>
+        <span id="status-badge-${index}" class="status-badge bg-slate-200 text-slate-600">Menunggu</span>
+      </div>
+      <div id="slide-frame-${index}" class="slide-frame" style="width:${PREVIEW_WIDTH}px;height:${PREVIEW_HEIGHT}px;">
+        <div id="slide-loading-${index}" class="absolute inset-0 flex items-center justify-center bg-slate-800/70">
+          <div class="spinner"></div>
+        </div>
+      </div>
+      <div class="w-full mt-3 flex flex-col gap-2">
+        <button id="download-btn-${index}" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold py-2 rounded-lg disabled:opacity-40" disabled>
+          ⬇️ Download Slide Ini
+        </button>
+        <button id="retry-btn-${index}" class="hidden w-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 rounded-lg">
+          🔄 Coba Lagi
+        </button>
+        <div class="flex items-center gap-2">
+          <input id="content-image-input-${index}" type="file" accept="image/*" class="hidden">
+          <button id="content-image-btn-${index}" type="button" title="Lampirkan gambar konten (opsional)"
+            class="shrink-0 w-9 h-9 flex items-center justify-center border border-slate-300 rounded-lg text-sm hover:bg-slate-50">🖼️</button>
+          <input id="revise-input-${index}" type="text" placeholder="instruksi (opsional): mis. taruh gambar di bawah..."
+            class="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          <button id="revise-btn-${index}" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 rounded-lg disabled:opacity-40" disabled>
+            🔁 Update
+          </button>
+        </div>
+        <div id="content-image-preview-${index}" class="hidden items-center gap-2 text-xs text-slate-500">
+          <img id="content-image-thumb-${index}" class="w-9 h-9 object-cover rounded border border-slate-200">
+          <span>Gambar terlampir untuk slide ini</span>
+          <button id="content-image-remove-${index}" type="button" class="text-red-500 hover:underline">Hapus</button>
+        </div>
+        <p id="error-msg-${index}" class="hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2"></p>
+      </div>
+    `;
+    return wrapper;
+  }
+
+  function setStatus(index, status, errorMsg){
+    const badge = document.getElementById(`status-badge-${index}`);
+    const errEl = document.getElementById(`error-msg-${index}`);
+    const dlBtn = document.getElementById(`download-btn-${index}`);
+    const revBtn = document.getElementById(`revise-btn-${index}`);
+    const retryBtn = document.getElementById(`retry-btn-${index}`);
+    const loadingEl = document.getElementById(`slide-loading-${index}`);
+
+    slides[index].status = status;
+    const hasDesign = !!slides[index].design;
+
+    if (status === 'loading'){
+      badge.textContent = 'Memproses...';
+      badge.className = 'status-badge bg-indigo-100 text-indigo-600';
+      if (loadingEl) loadingEl.classList.remove('hidden');
+      dlBtn.disabled = true; revBtn.disabled = true;
+      retryBtn.classList.add('hidden');
+      errEl.classList.add('hidden');
+    } else if (status === 'done'){
+      badge.textContent = 'Selesai';
+      badge.className = 'status-badge bg-emerald-100 text-emerald-600';
+      if (loadingEl) loadingEl.classList.add('hidden');
+      dlBtn.disabled = false; revBtn.disabled = false;
+      retryBtn.classList.add('hidden');
+      errEl.classList.add('hidden');
+    } else if (status === 'error'){
+      badge.textContent = 'Gagal';
+      badge.className = 'status-badge bg-red-100 text-red-600';
+      if (loadingEl) loadingEl.classList.add('hidden');
+      // kalau sebelumnya sudah pernah berhasil (mis. revisi yang gagal), biarkan slide lama tetap bisa didownload/direvisi
+      dlBtn.disabled = !hasDesign;
+      revBtn.disabled = !hasDesign;
+      retryBtn.classList.toggle('hidden', hasDesign);
+      errEl.textContent = errorMsg || 'Terjadi kesalahan.';
+      errEl.classList.remove('hidden');
+    }
+  }
+
+  function renderSlidePreview(index){
+    const frame = document.getElementById(`slide-frame-${index}`);
+    // buang canvas lama (jika ada), sisakan div loading
+    Array.from(frame.querySelectorAll('.slide-canvas')).forEach(n => n.remove());
+
+    const design = slides[index].design;
+    const rawText = slides[index].rawText;
+    const canvas = buildSlideCanvasNode(design, rawText, index, slides.length, slides[index].contentImage);
+    canvas.classList.add('slide-canvas');
+    canvas.style.transform = `scale(${PREVIEW_SCALE})`;
+    frame.appendChild(canvas);
+  }
+
+  // ---------- CAPTURE & DOWNLOAD ----------
+  async function captureSlideToBlob(index){
+    const design = slides[index].design;
+    const rawText = slides[index].rawText;
+    const fullNode = buildSlideCanvasNode(design, rawText, index, slides.length, slides[index].contentImage);
+    fullNode.style.transform = 'none';
+    captureSandbox.innerHTML = '';
+    captureSandbox.appendChild(fullNode);
+
+    const canvasResult = await html2canvas(fullNode, {
+      width: EXPORT_WIDTH,
+      height: EXPORT_HEIGHT,
+      scale: 1,
+      useCORS: true,
+      backgroundColor: null
+    });
+
+    captureSandbox.innerHTML = '';
+
+    return new Promise(resolve => {
+      canvasResult.toBlob(blob => resolve(blob), 'image/png', 1.0);
+    });
+  }
+
+
+  async function downloadSlide(index){
+    if (slides[index].status !== 'done') return;
+    const blob = await captureSlideToBlob(index);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `slide-${index + 1}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }
+
+  async function downloadAllSlides(){
+    const doneIndices = slides.map((s, i) => i).filter(i => slides[i].status === 'done');
+    if (doneIndices.length === 0){
+      showSidebarError('Belum ada slide yang siap untuk didownload.');
+      return;
+    }
+    for (const i of doneIndices){
+      await downloadSlide(i);
+      await new Promise(r => setTimeout(r, 400));
+    }
+  }
+
+  // ---------- MAIN GENERATE FLOW ----------
+  async function generateAllSlides(){
+    clearSidebarError();
+    const apiKey = apiKeyInput.value.trim();
+    if (!apiKey){
+      showSidebarError('Mohon isi Gemini API Key terlebih dahulu.');
+      return;
+    }
+    const rawParts = parseSlidesFromText(rawTextArea.value);
+    if (rawParts.length === 0){
+      showSidebarError('Mohon isi teks konten slide terlebih dahulu.');
+      return;
+    }
+
+    applyChosenRatio();
+
+    slides = rawParts.map((text, i) => ({
+      id: i,
+      rawText: text,
+      design: null,
+      status: 'pending',
+      isRtl: forceRtl.checked || containsArabic(text),
+      contentImage: null
+    }));
+
+    emptyState.classList.add('hidden');
+    slidesContainer.innerHTML = '';
+    slides.forEach((s, i) => {
+      slidesContainer.appendChild(createSlideBlock(i));
+      attachSlideBlockEvents(i);
+      setStatus(i, 'loading');
+    });
+
+    generateBtn.disabled = true;
+    generateBtn.textContent = '⏳ Sedang memproses...';
+    document.querySelectorAll('input[name="slideRatio"]').forEach(r => r.disabled = true);
+
+    for (let i = 0; i < slides.length; i++){
+      try {
+        const design = await generateDesignForSlide(slides[i].rawText, slides[i].isRtl);
+        slides[i].design = design;
+        renderSlidePreview(i);
+        setStatus(i, 'done');
+      } catch(err){
+        setStatus(i, 'error', err.message);
+      }
+    }
+
+    generateBtn.disabled = false;
+    generateBtn.textContent = '✨ Generate Semua Slide';
+    document.querySelectorAll('input[name="slideRatio"]').forEach(r => r.disabled = false);
+  }
+
+  function attachSlideBlockEvents(index){
+    document.getElementById(`download-btn-${index}`).addEventListener('click', () => downloadSlide(index));
+    document.getElementById(`revise-btn-${index}`).addEventListener('click', () => reviseSlide(index));
+    document.getElementById(`retry-btn-${index}`).addEventListener('click', () => retrySlide(index));
+    document.getElementById(`revise-input-${index}`).addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') reviseSlide(index);
+    });
+    document.getElementById(`content-image-btn-${index}`).addEventListener('click', () => {
+      document.getElementById(`content-image-input-${index}`).click();
+    });
+    document.getElementById(`content-image-input-${index}`).addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) handleContentImageSelect(index, e.target.files[0]);
+    });
+    document.getElementById(`content-image-remove-${index}`).addEventListener('click', () => removeContentImage(index));
+  }
+
+  function handleContentImageSelect(index, file){
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      slides[index].contentImage = ev.target.result;
+      const preview = document.getElementById(`content-image-preview-${index}`);
+      const thumb = document.getElementById(`content-image-thumb-${index}`);
+      thumb.src = ev.target.result;
+      preview.classList.remove('hidden');
+      preview.classList.add('flex');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeContentImage(index){
+    slides[index].contentImage = null;
+    const preview = document.getElementById(`content-image-preview-${index}`);
+    preview.classList.add('hidden');
+    preview.classList.remove('flex');
+    document.getElementById(`content-image-input-${index}`).value = '';
+    // langsung re-render tanpa panggil AI, supaya gambar hilang dari preview seketika
+    if (slides[index].design) renderSlidePreview(index);
+  }
+
+  async function retrySlide(index){
+    const apiKey = apiKeyInput.value.trim();
+    if (!apiKey){
+      showSidebarError('Mohon isi Gemini API Key terlebih dahulu.');
+      return;
+    }
+    setStatus(index, 'loading');
+    try {
+      const design = await generateDesignForSlide(slides[index].rawText, slides[index].isRtl);
+      slides[index].design = design;
+      renderSlidePreview(index);
+      setStatus(index, 'done');
+    } catch(err){
+      setStatus(index, 'error', err.message);
+    }
+  }
+
+  async function reviseSlide(index){
+    const input = document.getElementById(`revise-input-${index}`);
+    const instruction = input.value.trim();
+    const contentImage = slides[index].contentImage;
+    if (!instruction && !contentImage) return;
+    const apiKey = apiKeyInput.value.trim();
+    if (!apiKey){
+      showSidebarError('Mohon isi Gemini API Key terlebih dahulu.');
+      return;
+    }
+    if (!slides[index].design){
+      showSidebarError('Slide ini belum memiliki desain awal, klik "Coba Lagi" dulu.');
+      return;
+    }
+
+    setStatus(index, 'loading');
+    try {
+      const newDesign = await reviseDesignForSlide(slides[index].rawText, slides[index].design, instruction, contentImage);
+      slides[index].design = newDesign;
+      renderSlidePreview(index);
+      setStatus(index, 'done');
+      input.value = '';
+    } catch(err){
+      setStatus(index, 'error', err.message);
+    }
+  }
+
+  // ---------- EVENTS ----------
+  generateBtn.addEventListener('click', generateAllSlides);
+  downloadAllBtn.addEventListener('click', downloadAllSlides);
+
+  init();
+})();
+</script>
+</body>
+</html>
