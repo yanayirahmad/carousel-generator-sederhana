@@ -45,15 +45,12 @@
     <h1 class="text-xl font-bold text-slate-900 mb-1">🎨 AI Carousel Generator</h1>
     <p class="text-sm text-slate-500 mb-5">Art Director otomatis untuk carousel Instagram (4:5)</p>
 
-    <!-- API KEY -->
+    <!-- AI PROVIDERS -->
     <div class="mb-5">
-      <label class="block text-sm font-semibold mb-1.5">Google Gemini API Key</label>
-      <div class="flex gap-2">
-        <input id="apiKeyInput" type="password" placeholder="AIza..."
-          class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
-        <button id="toggleKeyBtn" type="button" class="px-3 py-2 border border-slate-300 rounded-lg text-sm hover:bg-slate-50">👁️</button>
-      </div>
-      <p class="text-xs text-slate-400 mt-1">Sistem menggunakan Google Gemini API (Model: <b>Gemini Flash (terbaru)</b>). Disimpan hanya di browser Anda (localStorage).</p>
+      <label class="block text-sm font-semibold mb-1.5">Provider AI</label>
+      <p class="text-xs text-slate-400 mb-2">Tambahkan satu atau lebih provider. Urutan dari atas ke bawah = urutan coba (kalau provider paling atas overload/kuota habis, sistem otomatis lanjut ke provider berikutnya). Semua key disimpan hanya di browser Anda (localStorage).</p>
+      <div id="providerRows" class="flex flex-col gap-2"></div>
+      <button id="addProviderBtn" type="button" class="mt-2 w-full border border-dashed border-slate-300 rounded-lg py-2 text-xs font-semibold text-slate-500 hover:border-indigo-400 hover:text-indigo-500 transition">+ Tambah Provider</button>
     </div>
 
     <!-- UKURAN SLIDE -->
@@ -201,10 +198,12 @@
   // ---------- STATE ----------
   let slides = []; // {id, rawText, design, status, errorMsg, isRtl}
   let sampleImageDataUrl = null;
+  let providers = []; // {id, provider, apiKey, model}
+  let providerIdSeed = 1;
 
   // ---------- ELEMENTS ----------
-  const apiKeyInput = document.getElementById('apiKeyInput');
-  const toggleKeyBtn = document.getElementById('toggleKeyBtn');
+  const providerRows = document.getElementById('providerRows');
+  const addProviderBtn = document.getElementById('addProviderBtn');
   const rawTextArea = document.getElementById('rawTextArea');
   const generateBtn = document.getElementById('generateBtn');
   const downloadAllBtn = document.getElementById('downloadAllBtn');
@@ -230,19 +229,131 @@
   const watermarkInput = document.getElementById('watermarkInput');
   const watermarkPositionSelect = document.getElementById('watermarkPositionSelect');
 
-  // ---------- INIT ----------
-  function init(){
-    const savedKey = localStorage.getItem('ai_carousel_gemini_key');
-    if (savedKey) apiKeyInput.value = savedKey;
-    apiKeyInput.addEventListener('input', () => {
-      localStorage.setItem('ai_carousel_gemini_key', apiKeyInput.value.trim());
+  // ---------- AI PROVIDER DEFINITIONS ----------
+  const PROVIDER_DEFS = {
+    gemini:     { label: 'Google Gemini', defaultModel: 'gemini-flash-latest',    keyPlaceholder: 'AIza...' },
+    openrouter: { label: 'OpenRouter',    defaultModel: 'google/gemma-4-31b-it:free', keyPlaceholder: 'sk-or-v1-...' },
+    groq:       { label: 'Groq',          defaultModel: 'qwen/qwen3.6-27b',        keyPlaceholder: 'gsk_...' }
+  };
+  const PROVIDER_STORAGE_KEY = 'ai_carousel_providers_v2';
+  const LEGACY_GEMINI_KEY = 'ai_carousel_gemini_key';
+
+  function persistProviders(){
+    try {
+      const toSave = providers.map(p => ({ provider: p.provider, apiKey: p.apiKey, model: p.model }));
+      localStorage.setItem(PROVIDER_STORAGE_KEY, JSON.stringify(toSave));
+    } catch(e){}
+  }
+
+  function addProviderRow(initial){
+    const p = {
+      id: providerIdSeed++,
+      provider: (initial && initial.provider) || 'gemini',
+      apiKey: (initial && initial.apiKey) || '',
+      model: (initial && initial.model) || PROVIDER_DEFS[(initial && initial.provider) || 'gemini'].defaultModel
+    };
+    providers.push(p);
+    renderProviderRows();
+    persistProviders();
+  }
+
+  function removeProviderRow(id){
+    providers = providers.filter(p => p.id !== id);
+    if (providers.length === 0) addProviderRow();
+    renderProviderRows();
+    persistProviders();
+  }
+
+  function moveProviderRow(id, dir){
+    const idx = providers.findIndex(p => p.id === id);
+    const newIdx = idx + dir;
+    if (idx < 0 || newIdx < 0 || newIdx >= providers.length) return;
+    const tmp = providers[idx];
+    providers[idx] = providers[newIdx];
+    providers[newIdx] = tmp;
+    renderProviderRows();
+    persistProviders();
+  }
+
+  function renderProviderRows(){
+    providerRows.innerHTML = '';
+    providers.forEach((p, idx) => {
+      const def = PROVIDER_DEFS[p.provider];
+      const row = document.createElement('div');
+      row.className = 'border border-slate-200 rounded-lg p-2 bg-slate-50';
+      row.innerHTML = `
+        <div class="flex items-center gap-1.5 mb-1.5">
+          <span class="text-xs font-semibold text-slate-400 w-4 text-center">${idx + 1}</span>
+          <select data-role="provider" class="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white">
+            ${Object.entries(PROVIDER_DEFS).map(([key, d]) => `<option value="${key}" ${key === p.provider ? 'selected' : ''}>${d.label}</option>`).join('')}
+          </select>
+          <button data-role="up" type="button" title="Naikkan prioritas" class="px-1.5 py-1 text-xs border border-slate-300 rounded hover:bg-slate-100 ${idx === 0 ? 'opacity-30 pointer-events-none' : ''}">▲</button>
+          <button data-role="down" type="button" title="Turunkan prioritas" class="px-1.5 py-1 text-xs border border-slate-300 rounded hover:bg-slate-100 ${idx === providers.length - 1 ? 'opacity-30 pointer-events-none' : ''}">▼</button>
+          <button data-role="remove" type="button" title="Hapus" class="px-1.5 py-1 text-xs border border-red-200 text-red-500 rounded hover:bg-red-50">✕</button>
+        </div>
+        <div class="flex gap-1.5 mb-1.5">
+          <input data-role="apiKey" type="password" placeholder="${def.keyPlaceholder}" value="${p.apiKey.replace(/"/g, '&quot;')}"
+            class="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          <button data-role="toggleKey" type="button" class="px-2 py-1 border border-slate-300 rounded-lg text-xs hover:bg-slate-100">👁️</button>
+        </div>
+        <details class="text-xs text-slate-400">
+          <summary class="cursor-pointer select-none hover:text-slate-600">Model (lanjutan)</summary>
+          <input data-role="model" type="text" value="${p.model.replace(/"/g, '&quot;')}"
+            class="mt-1 w-full border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </details>
+      `;
+      providerRows.appendChild(row);
+
+      row.querySelector('[data-role="provider"]').addEventListener('change', (e) => {
+        p.provider = e.target.value;
+        p.model = PROVIDER_DEFS[p.provider].defaultModel;
+        renderProviderRows();
+        persistProviders();
+      });
+      row.querySelector('[data-role="apiKey"]').addEventListener('input', (e) => {
+        p.apiKey = e.target.value;
+        persistProviders();
+      });
+      row.querySelector('[data-role="toggleKey"]').addEventListener('click', (e) => {
+        const input = row.querySelector('[data-role="apiKey"]');
+        input.type = input.type === 'password' ? 'text' : 'password';
+        e.target.textContent = input.type === 'password' ? '👁️' : '🙈';
+      });
+      row.querySelector('[data-role="model"]').addEventListener('input', (e) => {
+        p.model = e.target.value.trim() || PROVIDER_DEFS[p.provider].defaultModel;
+        persistProviders();
+      });
+      row.querySelector('[data-role="up"]').addEventListener('click', () => moveProviderRow(p.id, -1));
+      row.querySelector('[data-role="down"]').addEventListener('click', () => moveProviderRow(p.id, 1));
+      row.querySelector('[data-role="remove"]').addEventListener('click', () => removeProviderRow(p.id));
     });
   }
 
-  toggleKeyBtn.addEventListener('click', () => {
-    apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
-    toggleKeyBtn.textContent = apiKeyInput.type === 'password' ? '👁️' : '🙈';
-  });
+  addProviderBtn.addEventListener('click', () => addProviderRow());
+
+  function hasAnyApiKey(){
+    return providers.some(p => p.apiKey.trim().length > 0);
+  }
+
+  // ---------- INIT ----------
+  function init(){
+    let loaded = null;
+    try {
+      const raw = localStorage.getItem(PROVIDER_STORAGE_KEY);
+      if (raw) loaded = JSON.parse(raw);
+    } catch(e){}
+
+    if (loaded && Array.isArray(loaded) && loaded.length > 0){
+      loaded.forEach(item => addProviderRow(item));
+    } else {
+      const legacyKey = localStorage.getItem(LEGACY_GEMINI_KEY);
+      if (legacyKey){
+        addProviderRow({ provider: 'gemini', apiKey: legacyKey });
+      } else {
+        addProviderRow({ provider: 'gemini' });
+      }
+    }
+  }
 
   // sync color pickers <-> hex text fields
   function bindColorPair(colorEl, hexEl){
@@ -409,13 +520,21 @@ Aturan wajib lainnya:
     return [{ text: textBlock }];
   }
 
-  // ---------- GEMINI CALL ----------
-  const GEMINI_MODEL = 'gemini-flash-latest';
+  // ---------- AI CALL: MULTI PROVIDER ----------
+  const OPENAI_COMPAT_BASE_URL = {
+    groq: 'https://api.groq.com/openai/v1',
+    openrouter: 'https://openrouter.ai/api/v1'
+  };
 
-  async function callGemini(contents){
-    const apiKey = apiKeyInput.value.trim();
-    if (!apiKey) throw new Error('API Key belum diisi.');
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  function isOverloadOrQuotaError(err){
+    const msg = (err && err.message ? err.message : String(err)).toLowerCase();
+    return /overload|quota|rate.?limit|429|503|resource_exhausted|too many requests|capacity/.test(msg);
+  }
+
+  async function callGemini(providerObj, contents){
+    const apiKey = providerObj.apiKey.trim();
+    const model = providerObj.model || PROVIDER_DEFS.gemini.defaultModel;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -458,11 +577,105 @@ Aturan wajib lainnya:
     }
   }
 
+  // Converts canonical Gemini-style contents ({role, parts:[{text}|{inline_data}]}) ke format
+  // OpenAI-compatible "messages" (dipakai Groq & OpenRouter).
+  function callOpenAICompatible(providerObj, contents){
+    const apiKey = providerObj.apiKey.trim();
+    const model = providerObj.model || PROVIDER_DEFS[providerObj.provider].defaultModel;
+    const baseUrl = OPENAI_COMPAT_BASE_URL[providerObj.provider];
+
+    const messages = [{ role: 'system', content: buildSystemPrompt() }];
+    contents.forEach(entry => {
+      const role = entry.role === 'model' ? 'assistant' : 'user';
+      const blocks = entry.parts.map(part => {
+        if (part.text !== undefined){
+          return { type: 'text', text: part.text };
+        }
+        if (part.inline_data){
+          return { type: 'image_url', image_url: { url: `data:${part.inline_data.mime_type};base64,${part.inline_data.data}` } };
+        }
+        return null;
+      }).filter(Boolean);
+      messages.push({ role, content: blocks });
+    });
+
+    return fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+        temperature: 0.85,
+        max_tokens: 8192,
+        response_format: { type: 'json_object' }
+      })
+    }).then(async response => {
+      if (!response.ok){
+        let errMsg = `HTTP ${response.status}`;
+        try {
+          const errJson = await response.json();
+          if (errJson.error && errJson.error.message) errMsg = errJson.error.message;
+        } catch(e){}
+        throw new Error(errMsg);
+      }
+      const data = await response.json();
+      const content = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : null;
+      if (!content){
+        throw new Error(`${PROVIDER_DEFS[providerObj.provider].label} tidak mengembalikan respons yang valid.`);
+      }
+      try {
+        return JSON.parse(content);
+      } catch(e){
+        console.error('Gagal parse JSON dari AI:', content);
+        throw new Error('AI mengembalikan format JSON yang tidak valid. Coba klik "Coba Lagi".');
+      }
+    });
+  }
+
+  async function callProvider(providerObj, contents){
+    if (!providerObj.apiKey.trim()) throw new Error('API Key belum diisi.');
+    if (providerObj.provider === 'gemini'){
+      return await callGemini(providerObj, contents);
+    }
+    return await callOpenAICompatible(providerObj, contents);
+  }
+
+  // Coba tiap provider sesuai urutan prioritas di UI. Kalau providernya overload/kuota habis,
+  // otomatis lanjut ke provider berikutnya yang key-nya terisi. Kalau errornya bukan soal
+  // overload/kuota (mis. API key salah), langsung berhenti dan laporkan.
+  async function callAIWithFallback(contents){
+    const active = providers.filter(p => p.apiKey.trim().length > 0);
+    if (active.length === 0){
+      throw new Error('Mohon isi minimal satu API key provider AI di sidebar.');
+    }
+    const attempts = [];
+    for (let i = 0; i < active.length; i++){
+      const p = active[i];
+      const label = PROVIDER_DEFS[p.provider].label;
+      try {
+        return await callProvider(p, contents);
+      } catch(err){
+        attempts.push(`${label}: ${err.message}`);
+        const isLast = i === active.length - 1;
+        if (!isOverloadOrQuotaError(err) || isLast){
+          if (attempts.length > 1){
+            throw new Error(`Semua provider gagal.\n${attempts.join('\n')}`);
+          }
+          throw new Error(err.message);
+        }
+        // overload/kuota & masih ada provider berikutnya -> lanjut otomatis
+      }
+    }
+  }
+
   async function generateDesignForSlide(rawText, isRtlHint){
     const contents = [
       { role: 'user', parts: buildUserMessageParts(rawText, isRtlHint ? '\n\nCatatan: teks ini terdeteksi mengandung karakter Arab.' : '') }
     ];
-    return await callGemini(contents);
+    return await callAIWithFallback(contents);
   }
 
   async function reviseDesignForSlide(rawText, previousDesign, instruction, contentImageDataUrl){
@@ -487,7 +700,7 @@ Aturan wajib lainnya:
       { role: 'model', parts: [{ text: JSON.stringify(previousDesign) }] },
       { role: 'user', parts: revisionParts }
     ];
-    return await callGemini(contents);
+    return await callAIWithFallback(contents);
   }
 
   // ---------- RENDER SLIDE DOM (full resolution 1080x1350) ----------
@@ -601,10 +814,11 @@ Aturan wajib lainnya:
 
       if (block.highlight){
         textSpan.style.backgroundColor = design.highlight_color || design.accent_color || '#fde047';
-        textSpan.style.padding = '4px 14px';
+        textSpan.style.padding = '6px 14px';
         textSpan.style.borderRadius = '8px';
-        textSpan.style.boxDecorationBreak = 'clone';
-        textSpan.style.webkitBoxDecorationBreak = 'clone';
+        textSpan.style.display = 'inline-flex';
+        textSpan.style.alignItems = 'center';
+        textSpan.style.lineHeight = '1.15';
       }
 
       blockRow.appendChild(textSpan);
@@ -868,9 +1082,8 @@ Aturan wajib lainnya:
   // ---------- MAIN GENERATE FLOW ----------
   async function generateAllSlides(){
     clearSidebarError();
-    const apiKey = apiKeyInput.value.trim();
-    if (!apiKey){
-      showSidebarError('Mohon isi Gemini API Key terlebih dahulu.');
+    if (!hasAnyApiKey()){
+      showSidebarError('Mohon isi minimal satu API key provider AI terlebih dahulu.');
       return;
     }
     const rawParts = parseSlidesFromText(rawTextArea.value);
@@ -959,9 +1172,8 @@ Aturan wajib lainnya:
   }
 
   async function retrySlide(index){
-    const apiKey = apiKeyInput.value.trim();
-    if (!apiKey){
-      showSidebarError('Mohon isi Gemini API Key terlebih dahulu.');
+    if (!hasAnyApiKey()){
+      showSidebarError('Mohon isi minimal satu API key provider AI terlebih dahulu.');
       return;
     }
     setStatus(index, 'loading');
@@ -980,9 +1192,8 @@ Aturan wajib lainnya:
     const instruction = input.value.trim();
     const contentImage = slides[index].contentImage;
     if (!instruction && !contentImage) return;
-    const apiKey = apiKeyInput.value.trim();
-    if (!apiKey){
-      showSidebarError('Mohon isi Gemini API Key terlebih dahulu.');
+    if (!hasAnyApiKey()){
+      showSidebarError('Mohon isi minimal satu API key provider AI terlebih dahulu.');
       return;
     }
     if (!slides[index].design){
