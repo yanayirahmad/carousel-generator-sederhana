@@ -838,15 +838,34 @@ Aturan wajib lainnya:
       textSpan.style.fontFamily = "'Tajawal', 'Calibri', sans-serif";
 
       if (block.highlight){
-        textSpan.style.backgroundColor = design.highlight_color || design.accent_color || '#fde047';
-        textSpan.style.padding = '6px 14px';
-        textSpan.style.borderRadius = '8px';
-        textSpan.style.display = 'inline-flex';
-        textSpan.style.alignItems = 'center';
-        textSpan.style.lineHeight = '1.15';
-      }
+        // Teknik anti-meleset di html2canvas: background TIDAK ditaruh langsung di elemen teks
+        // (itu butuh html2canvas menghitung ulang tinggi baris dari font metric -> sering salah).
+        // Sebagai gantinya, background dibuat sebagai layer terpisah yang menutupi 100% "kotak padding"
+        // milik pembungkusnya secara geometris murni (position:relative + inset:0), murni box model,
+        // bukan dihitung dari line-height/font metric — ini yang terbukti presisi di html2canvas.
+        const highlightWrap = document.createElement('span');
+        highlightWrap.style.position = 'relative';
+        highlightWrap.style.display = 'inline-block';
+        highlightWrap.style.padding = '6px 14px';
+        highlightWrap.style.borderRadius = '8px';
 
-      blockRow.appendChild(textSpan);
+        const bgLayer = document.createElement('span');
+        bgLayer.style.position = 'absolute';
+        bgLayer.style.inset = '0';
+        bgLayer.style.backgroundColor = design.highlight_color || design.accent_color || '#fde047';
+        bgLayer.style.borderRadius = '8px';
+        bgLayer.style.zIndex = '0';
+        bgLayer.style.pointerEvents = 'none';
+
+        textSpan.style.position = 'relative';
+        textSpan.style.zIndex = '1';
+
+        highlightWrap.appendChild(bgLayer);
+        highlightWrap.appendChild(textSpan);
+        blockRow.appendChild(highlightWrap);
+      } else {
+        blockRow.appendChild(textSpan);
+      }
       textWrap.appendChild(blockRow);
     });
 
