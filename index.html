@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Carousel Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -73,6 +76,7 @@
       <textarea id="rawTextArea" rows="10" placeholder="Slide 1: teks di sini...&#10;---&#10;Slide 2: teks di sini (bisa Arab: بسم الله الرحمن الرحيم)&#10;---&#10;Slide 3..."
         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" dir="auto"></textarea>
       <p class="text-xs text-slate-400 mt-1">Pisahkan tiap slide dengan baris berisi <code class="bg-slate-100 px-1 rounded">---</code></p>
+      <p class="text-xs text-slate-400 mt-1">Tip: ketik <code class="bg-slate-100 px-1 rounded">[SPASI]</code> atau <code class="bg-slate-100 px-1 rounded">[SPASI:300]</code> di baris sendiri buat kasih ruang kosong (misal buat nempel gambar manual nanti).</p>
     </div>
 
     <!-- STYLING MANUAL -->
@@ -480,6 +484,7 @@ Aturan wajib untuk "content_blocks" (INI KUNCI UTAMA agar desain terasa modern, 
 4. "highlight": true HANYA untuk 1-3 blok paling penting per slide (kata/frasa kunci yang ingin ditonjolkan seperti diberi stabilo). Jangan highlight semua blok atau tidak ada highlight sama sekali kalau teks cukup panjang untuk punya poin penting.
 5. "icon": isi dengan SATU emoji yang relevan secara makna sebagai ilustrasi sederhana pendamping teks (opsional, gunakan pada maksimal 1-2 blok yang paling cocok, isi null jika tidak relevan). Jangan paksakan emoji jika tidak ada yang benar-benar relevan.
 6. Urutan array "content_blocks" merepresentasikan urutan tampil dari atas ke bawah (atau kanan ke kiri urutan logis jika is_rtl true).
+7. Kalau di teks asli ada baris yang PERSIS berisi token "[SPASI]" atau "[SPASI:angka]" (contoh: "[SPASI:300]") — ini BUKAN bagian dari kalimat, JANGAN dianggap teks biasa dan JANGAN ditampilkan sebagai teks. Ubah jadi SATU content_block khusus dengan format: {"text": "", "role": "spacer", "spacer_height_px": angka_dari_token_atau_200_jika_tidak_ada_angka, "font_size_px": 0, "font_weight": "normal", "highlight": false, "icon": null}. Blok ini akan dirender sebagai ruang kosong vertikal (biasanya dipakai user untuk menempel gambar sendiri secara manual di luar aplikasi, misalnya lewat Canva). Pertahankan posisi token ini persis sesuai urutan aslinya di antara blok-blok teks lain, jangan dipindah-pindah.
 
 Aturan wajib untuk "content_image_placement":
 7. Field ini HANYA diisi (bukan null) jika pesan user secara eksplisit menyebutkan ada GAMBAR KONTEN yang dilampirkan untuk slide ini (biasanya muncul di pesan revisi lanjutan, bukan di generate awal). Jika tidak ada gambar konten yang disebutkan, WAJIB isi null.
@@ -711,7 +716,7 @@ Aturan wajib lainnya:
     canvas.style.position = 'relative';
     canvas.style.overflow = 'hidden';
     canvas.style.boxSizing = 'border-box';
-    canvas.style.fontFamily = "'Calibri', sans-serif";
+    canvas.style.fontFamily = "'Tajawal', 'Calibri', sans-serif";
     canvas.dir = design.is_rtl ? 'rtl' : 'ltr';
 
     if (design.background_gradient && design.background_gradient.from && design.background_gradient.to){
@@ -786,6 +791,16 @@ Aturan wajib lainnya:
       : [{ text: rawText, role: 'body', font_size_px: 40, font_weight: 'normal', highlight: false, icon: null }];
 
     blocks.forEach(block => {
+      // blok khusus "spacer" (dari token [SPASI] yang diketik user) → cuma render ruang kosong, tanpa teks
+      if (block.role === 'spacer'){
+        const spacerEl = document.createElement('div');
+        spacerEl.style.width = '100%';
+        spacerEl.style.height = (block.spacer_height_px || 200) + 'px';
+        spacerEl.style.flexShrink = '0';
+        textWrap.appendChild(spacerEl);
+        return;
+      }
+
       const blockRow = document.createElement('div');
       blockRow.style.display = 'flex';
       blockRow.style.flexDirection = design.is_rtl ? 'row-reverse' : 'row';
@@ -806,11 +821,21 @@ Aturan wajib lainnya:
       textSpan.textContent = block.text || '';
       textSpan.style.color = block.color || design.text_color || '#111111';
       textSpan.style.fontSize = (block.font_size_px || (block.role === 'heading' ? 60 : block.role === 'caption' ? 22 : 36)) + 'px';
-      textSpan.style.fontWeight = block.font_weight || (block.role === 'heading' || block.role === 'subheading' ? 'bold' : 'normal');
+
+      // Tajawal cuma rapi buat teks Arab di weight Light/Regular/Medium (300-500) —
+      // weight Bold/ExtraBold (700/800) bikin sambungan huruf Arab jadi rapat & susah dibaca.
+      // Jadi kalau blok ini mengandung huruf Arab, weight-nya dipaksa maksimal 500 (Medium).
+      let resolvedWeight = block.font_weight || (block.role === 'heading' || block.role === 'subheading' ? 'bold' : 'normal');
+      const isBoldish = resolvedWeight === 'bold' || resolvedWeight === 700 || resolvedWeight === '700' || resolvedWeight === 800 || resolvedWeight === '800';
+      if (containsArabic(block.text || '') && isBoldish){
+        resolvedWeight = '500';
+      }
+      textSpan.style.fontWeight = resolvedWeight;
+
       textSpan.style.lineHeight = design.line_height || 1.4;
       textSpan.style.whiteSpace = 'pre-wrap';
       textSpan.style.wordBreak = 'break-word';
-      textSpan.style.fontFamily = "'Calibri', sans-serif";
+      textSpan.style.fontFamily = "'Tajawal', 'Calibri', sans-serif";
 
       if (block.highlight){
         textSpan.style.backgroundColor = design.highlight_color || design.accent_color || '#fde047';
@@ -848,12 +873,12 @@ Aturan wajib lainnya:
       wm.style.display = 'flex';
       wm.style.alignItems = 'center';
       wm.style.gap = '8px';
-      wm.style.fontFamily = "'Calibri', sans-serif";
-      wm.style.fontSize = '24px';
-      wm.style.fontWeight = '600';
+      wm.style.fontFamily = "'Tajawal', 'Calibri', sans-serif";
+      wm.style.fontSize = '32px';
+      wm.style.fontWeight = '700';
       wm.style.letterSpacing = '0.5px';
       wm.style.color = design.text_color || '#111111';
-      wm.style.opacity = '0.75';
+      wm.style.opacity = '0.85';
       wm.style.whiteSpace = 'nowrap';
 
       if (wmVSide === 'top'){ wm.style.top = '44px'; wm.style.bottom = 'auto'; }
@@ -864,8 +889,8 @@ Aturan wajib lainnya:
       else { wm.style.left = '50%'; wm.style.right = 'auto'; wm.style.transform = 'translateX(-50%)'; }
 
       const dot = document.createElement('span');
-      dot.style.width = '8px';
-      dot.style.height = '8px';
+      dot.style.width = '10px';
+      dot.style.height = '10px';
       dot.style.borderRadius = '50%';
       dot.style.backgroundColor = design.accent_color || '#6366f1';
       dot.style.display = 'inline-block';
@@ -918,13 +943,10 @@ Aturan wajib lainnya:
         arrowBadge.style.justifyContent = 'center';
         arrowBadge.style.boxShadow = '0 4px 14px rgba(0,0,0,0.25)';
 
-        const arrowIcon = document.createElement('span');
-        arrowIcon.textContent = '→';
-        arrowIcon.style.color = '#ffffff';
-        arrowIcon.style.fontSize = '30px';
-        arrowIcon.style.fontWeight = 'bold';
-        arrowIcon.style.lineHeight = '1';
-        arrowBadge.appendChild(arrowIcon);
+        // pakai SVG (bukan karakter teks "→") supaya posisinya presisi & tidak tergantung metrik font
+        arrowBadge.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+          <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
 
         canvas.appendChild(arrowBadge);
       }
@@ -1037,6 +1059,10 @@ Aturan wajib lainnya:
     fullNode.style.transform = 'none';
     captureSandbox.innerHTML = '';
     captureSandbox.appendChild(fullNode);
+
+    // pastikan font web (Tajawal) sudah selesai dimuat sebelum di-capture,
+    // supaya html2canvas tidak menggambar pakai font fallback sesaat sebelum font asli siap
+    try { await document.fonts.ready; } catch(e){}
 
     const canvasResult = await html2canvas(fullNode, {
       width: EXPORT_WIDTH,
