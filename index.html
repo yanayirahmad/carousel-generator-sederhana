@@ -168,10 +168,36 @@
     <!-- WATERMARK -->
     <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
       <label class="block text-sm font-semibold mb-1.5">Watermark / Nama Akun (opsional)</label>
-      <input id="watermarkInput" type="text" placeholder="@nama.akun atau Nama Brand"
+      <input id="watermarkInput" type="text" placeholder="@nama.akun atau Nama Brand (default)"
         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 mb-2">
+
+      <label class="block text-xs text-slate-500 mb-1">Tampilkan Logo Platform (opsional)</label>
+      <div class="space-y-1.5 mb-2">
+        <div>
+          <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+            <input type="checkbox" id="wmPlatformInstagram" class="accent-indigo-600"> Instagram
+          </label>
+          <input id="wmNameInstagram" type="text" placeholder="Username Instagram (kosongkan = pakai nama default)"
+            class="hidden w-full mt-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+        <div>
+          <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+            <input type="checkbox" id="wmPlatformFacebook" class="accent-indigo-600"> Facebook
+          </label>
+          <input id="wmNameFacebook" type="text" placeholder="Nama halaman Facebook (kosongkan = pakai nama default)"
+            class="hidden w-full mt-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+        <div>
+          <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+            <input type="checkbox" id="wmPlatformTiktok" class="accent-indigo-600"> TikTok
+          </label>
+          <input id="wmNameTiktok" type="text" placeholder="Username TikTok (kosongkan = pakai nama default)"
+            class="hidden w-full mt-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+      </div>
+
       <label class="block text-xs text-slate-500 mb-1">Posisi Watermark</label>
-      <select id="watermarkPositionSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+      <select id="watermarkPositionSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 mb-2">
         <option value="top-left">Kiri Atas</option>
         <option value="top-center">Tengah Atas</option>
         <option value="top-right">Kanan Atas</option>
@@ -179,7 +205,13 @@
         <option value="bottom-center">Tengah Bawah</option>
         <option value="bottom-right">Kanan Bawah</option>
       </select>
-      <p class="text-xs text-slate-400 mt-1">Otomatis muncul kecil di posisi terpilih pada tiap slide. Posisi bawah otomatis digeser agar tidak menabrak indikator dots/panah.</p>
+
+      <label class="block text-xs text-slate-500 mb-1">Preview Watermark</label>
+      <div class="bg-white border border-slate-200 rounded-lg p-3 flex items-center justify-center min-h-[48px]">
+        <div id="watermarkPreview" class="flex items-center gap-2 text-sm font-bold text-slate-800"></div>
+      </div>
+
+      <p class="text-xs text-slate-400 mt-1.5">Kalau tidak ada platform dicentang, dipakai titik kecil aksen (seperti biasa). Kalau ada yang dicentang, titik aksen otomatis diganti logo platform tersebut.</p>
     </div>
 
     <!-- RTL TOGGLE -->
@@ -278,6 +310,13 @@
   const forceRtl = document.getElementById('forceRtl');
   const watermarkInput = document.getElementById('watermarkInput');
   const watermarkPositionSelect = document.getElementById('watermarkPositionSelect');
+  const wmPlatformInstagram = document.getElementById('wmPlatformInstagram');
+  const wmPlatformFacebook = document.getElementById('wmPlatformFacebook');
+  const wmPlatformTiktok = document.getElementById('wmPlatformTiktok');
+  const wmNameInstagram = document.getElementById('wmNameInstagram');
+  const wmNameFacebook = document.getElementById('wmNameFacebook');
+  const wmNameTiktok = document.getElementById('wmNameTiktok');
+  const watermarkPreview = document.getElementById('watermarkPreview');
 
   // ---------- AI PROVIDER DEFINITIONS ----------
   const PROVIDER_DEFS = {
@@ -462,6 +501,122 @@
     sidebarError.textContent = '';
   }
   function containsArabic(text){ return ARABIC_REGEX.test(text); }
+
+  // ---- WATERMARK PLATFORM (Instagram/Facebook/TikTok) ----
+  // Ikon dibuat monokrom & disederhanakan (bukan reproduksi persis logo resmi berwarna),
+  // pakai currentColor supaya warnanya otomatis ikut warna teks slide.
+  const PLATFORM_ICONS = {
+    instagram: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.15" fill="currentColor"/></svg>',
+    facebook: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M13.5 8.2h-1c-.6 0-1 .4-1 1V11H9.8v2h1.7v5h2v-5h1.4l.3-2h-1.7V9.5c0-.3.2-.5.5-.5h1.2V8.2z" fill="currentColor"/></svg>',
+    tiktok: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.5 4v10.2a3.3 3.3 0 1 1-2.8-3.26" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 4c.35 2.1 1.9 3.7 3.8 3.95" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
+
+  // Baca centang platform + input nama, tentukan mode tampilan watermark:
+  // 'dot' (tanpa platform, pakai titik aksen), 'combined' (nama sama, ikon digabung 1 nama),
+  // atau 'pairs' (nama beda-beda, tiap ikon dapat nama sendiri).
+  function getWatermarkConfig(){
+    const defaultName = (watermarkInput.value || '').trim();
+    const platformDefs = [
+      { key: 'instagram', checked: wmPlatformInstagram.checked, name: (wmNameInstagram.value.trim() || defaultName) },
+      { key: 'facebook', checked: wmPlatformFacebook.checked, name: (wmNameFacebook.value.trim() || defaultName) },
+      { key: 'tiktok', checked: wmPlatformTiktok.checked, name: (wmNameTiktok.value.trim() || defaultName) }
+    ].filter(p => p.checked && p.name);
+
+    if (platformDefs.length === 0){
+      return { mode: 'dot', name: defaultName };
+    }
+
+    // Kelompokkan platform yang nama-nya SAMA jadi satu grup (icon-icon digabung, nama cuma sekali).
+    // Urutan grup ditentukan oleh kemunculan pertama nilai nama tsb, tapi platform di dalam tiap
+    // grup tetap mengikuti urutan tetap IG -> FB -> TikTok. Ini otomatis menangani kasus campuran:
+    // sebagian platform nama sama, sebagian beda -- tidak cuma "semua sama" atau "semua beda".
+    const groups = [];
+    const groupIndexByName = new Map();
+    platformDefs.forEach(p => {
+      if (groupIndexByName.has(p.name)){
+        groups[groupIndexByName.get(p.name)].platforms.push(p);
+      } else {
+        groupIndexByName.set(p.name, groups.length);
+        groups.push({ name: p.name, platforms: [p] });
+      }
+    });
+
+    return { mode: 'groups', groups };
+  }
+
+  function buildWatermarkNode(config, color, accentColor){
+    const wm = document.createElement('div');
+    wm.style.display = 'flex';
+    wm.style.alignItems = 'center';
+    wm.style.gap = '10px';
+    wm.style.color = color;
+
+    function makeIcon(key){
+      const span = document.createElement('span');
+      span.style.display = 'inline-flex';
+      span.style.color = color;
+      span.innerHTML = PLATFORM_ICONS[key];
+      return span;
+    }
+
+    if (config.mode === 'dot'){
+      const dot = document.createElement('span');
+      dot.style.width = '10px';
+      dot.style.height = '10px';
+      dot.style.borderRadius = '50%';
+      dot.style.backgroundColor = accentColor;
+      dot.style.display = 'inline-block';
+      dot.style.flexShrink = '0';
+      wm.appendChild(dot);
+
+      const textEl = document.createElement('span');
+      textEl.textContent = config.name;
+      wm.appendChild(textEl);
+      return wm;
+    }
+
+    // mode 'groups': tiap grup = kumpulan ikon platform bernama sama, diikuti SATU nama
+    config.groups.forEach(group => {
+      const groupWrap = document.createElement('span');
+      groupWrap.style.display = 'inline-flex';
+      groupWrap.style.alignItems = 'center';
+      groupWrap.style.gap = '6px';
+      group.platforms.forEach(p => groupWrap.appendChild(makeIcon(p.key)));
+      const nameEl = document.createElement('span');
+      nameEl.textContent = group.name;
+      groupWrap.appendChild(nameEl);
+      wm.appendChild(groupWrap);
+    });
+
+    return wm;
+  }
+
+  function updateWatermarkPreview(){
+    watermarkPreview.innerHTML = '';
+    const config = getWatermarkConfig();
+    const hasContent = config.mode !== 'dot' || config.name;
+    if (!hasContent){
+      watermarkPreview.innerHTML = '<span class="text-slate-300 font-normal text-xs">Belum ada watermark</span>';
+      return;
+    }
+    const node = buildWatermarkNode(config, '#111111', '#6366f1');
+    watermarkPreview.appendChild(node);
+  }
+
+  [watermarkInput, wmPlatformInstagram, wmPlatformFacebook, wmPlatformTiktok, wmNameInstagram, wmNameFacebook, wmNameTiktok].forEach(el => {
+    el.addEventListener('input', updateWatermarkPreview);
+    el.addEventListener('change', updateWatermarkPreview);
+  });
+
+  wmPlatformInstagram.addEventListener('change', () => {
+    wmNameInstagram.classList.toggle('hidden', !wmPlatformInstagram.checked);
+  });
+  wmPlatformFacebook.addEventListener('change', () => {
+    wmNameFacebook.classList.toggle('hidden', !wmPlatformFacebook.checked);
+  });
+  wmPlatformTiktok.addEventListener('change', () => {
+    wmNameTiktok.classList.toggle('hidden', !wmPlatformTiktok.checked);
+  });
 
   function parseSlidesFromText(text){
     const parts = text.split(/\r?\n\s*-{3,}\s*\r?\n|^\s*-{3,}\s*$/gm)
@@ -941,7 +1096,8 @@ Aturan wajib lainnya:
     canvas.appendChild(textWrap);
 
     // ---- watermark (nama akun) + pagination: hitung dulu supaya tidak saling tabrakan ----
-    const watermarkText = (watermarkInput.value || '').trim();
+    const wmConfig = getWatermarkConfig();
+    const hasWatermarkContent = wmConfig.mode !== 'dot' || wmConfig.name;
     const wmPosition = watermarkPositionSelect.value || 'top-left'; // top-left|top-center|top-right|bottom-left|bottom-center|bottom-right
     const [wmVSide, wmHSide] = wmPosition.split('-');
     const EDGE = 48;
@@ -949,23 +1105,19 @@ Aturan wajib lainnya:
 
     let dotsBottomOffset = EDGE;
     let arrowBottomOffset = 40;
-    if (watermarkText && wmVSide === 'bottom'){
+    if (hasWatermarkContent && wmVSide === 'bottom'){
       if (wmHSide === 'center') dotsBottomOffset = EDGE + WM_RESERVE;
       if (wmHSide === 'right') arrowBottomOffset = 40 + WM_RESERVE;
     }
 
     // ---- watermark ----
-    if (watermarkText){
-      const wm = document.createElement('div');
+    if (hasWatermarkContent){
+      const wm = buildWatermarkNode(wmConfig, design.text_color || '#111111', design.accent_color || '#6366f1');
       wm.style.position = 'absolute';
-      wm.style.display = 'flex';
-      wm.style.alignItems = 'center';
-      wm.style.gap = '8px';
       wm.style.fontFamily = "'Tajawal', 'Calibri', sans-serif";
       wm.style.fontSize = '32px';
       wm.style.fontWeight = '700';
       wm.style.letterSpacing = '0.5px';
-      wm.style.color = design.text_color || '#111111';
       wm.style.opacity = '0.85';
       wm.style.whiteSpace = 'nowrap';
 
@@ -975,19 +1127,6 @@ Aturan wajib lainnya:
       if (wmHSide === 'left'){ wm.style.left = '48px'; wm.style.right = 'auto'; }
       else if (wmHSide === 'right'){ wm.style.right = '48px'; wm.style.left = 'auto'; }
       else { wm.style.left = '50%'; wm.style.right = 'auto'; wm.style.transform = 'translateX(-50%)'; }
-
-      const dot = document.createElement('span');
-      dot.style.width = '10px';
-      dot.style.height = '10px';
-      dot.style.borderRadius = '50%';
-      dot.style.backgroundColor = design.accent_color || '#6366f1';
-      dot.style.display = 'inline-block';
-      dot.style.flexShrink = '0';
-      wm.appendChild(dot);
-
-      const wmText = document.createElement('span');
-      wmText.textContent = watermarkText;
-      wm.appendChild(wmText);
 
       canvas.appendChild(wm);
     }
@@ -1335,6 +1474,7 @@ Aturan wajib lainnya:
   downloadAllBtn.addEventListener('click', downloadAllSlides);
 
   init();
+  updateWatermarkPreview();
 })();
 </script>
 </body>
