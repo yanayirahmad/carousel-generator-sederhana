@@ -70,6 +70,50 @@
       <p class="text-xs text-slate-400 mt-1.5">4:5 → 1080×1350px, 1:1 → 1080×1080px. Ganti ukuran perlu generate ulang semua slide.</p>
     </div>
 
+    <!-- PERATAAN TEKS DEFAULT -->
+    <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
+      <label class="block text-sm font-semibold mb-2">Perataan Teks Default</label>
+      <div class="grid grid-cols-3 gap-2">
+        <label class="flex items-center justify-center border border-slate-300 rounded-lg py-2 text-sm cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+          <input type="radio" name="defaultTextAlign" value="left" class="hidden">Kiri
+        </label>
+        <label class="flex items-center justify-center border border-slate-300 rounded-lg py-2 text-sm cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+          <input type="radio" name="defaultTextAlign" value="center" checked class="hidden">Tengah
+        </label>
+        <label class="flex items-center justify-center border border-slate-300 rounded-lg py-2 text-sm cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+          <input type="radio" name="defaultTextAlign" value="right" class="hidden">Kanan
+        </label>
+      </div>
+      <p class="text-xs text-slate-400 mt-1.5">Berlaku untuk semua slide. Mau beda sendiri di slide tertentu? Ketik <code class="bg-slate-100 px-1 rounded">[RATA:kiri]</code>, <code class="bg-slate-100 px-1 rounded">[RATA:tengah]</code>, atau <code class="bg-slate-100 px-1 rounded">[RATA:kanan]</code> di baris sendiri pada slide itu (baris ini otomatis dihapus, tidak ikut tampil).</p>
+    </div>
+
+    <!-- MODE WARNA TEKS PENEKANAN -->
+    <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
+      <label class="block text-sm font-semibold mb-2">Warna Teks Penekanan</label>
+      <div class="space-y-1.5 mb-3">
+        <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+          <input type="radio" name="textColorMode" value="none" checked class="accent-indigo-600">
+          Satu warna teks saja (variasi cuma dari tebal & ukuran font)
+        </label>
+        <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+          <input type="radio" name="textColorMode" value="slide1" class="accent-indigo-600">
+          Warna teks bervariasi khusus di Slide 1 saja
+        </label>
+        <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+          <input type="radio" name="textColorMode" value="all" class="accent-indigo-600">
+          Warna teks bervariasi di semua slide
+        </label>
+      </div>
+      <div>
+        <label class="text-xs text-slate-500 block mb-1">Warna Teks Variasi</label>
+        <div class="flex items-center gap-1">
+          <input id="variationTextColor" type="color" value="#6366f1" class="w-8 h-8">
+          <input id="variationTextColorHex" type="text" value="#6366f1" class="w-full border border-slate-300 rounded px-1.5 py-1 text-xs">
+        </div>
+      </div>
+      <p class="text-xs text-slate-400 mt-1.5">Berlaku kalau salah satu pilihan "bervariasi" di atas dipilih. Warna ini dipakai TETAP SAMA di semua kata/frasa kunci yang ditonjolkan, supaya hasilnya konsisten (bukan AI pilih warna beda-beda tiap slide).</p>
+    </div>
+
     <!-- TEKS INPUT -->
     <div class="mb-5">
       <label class="block text-sm font-semibold mb-1.5">Konten Teks per Slide</label>
@@ -91,7 +135,7 @@
           </div>
         </div>
         <div>
-          <label class="text-xs text-slate-500 block mb-1">Teks</label>
+          <label class="text-xs text-slate-500 block mb-1">Warna Teks Utama</label>
           <div class="flex items-center gap-1">
             <input id="manualText" type="color" value="#111111" class="w-8 h-8">
             <input id="manualTextHex" type="text" value="#111111" class="w-full border border-slate-300 rounded px-1.5 py-1 text-xs">
@@ -223,6 +267,8 @@
   const manualAccent = document.getElementById('manualAccent');
   const manualAccentHex = document.getElementById('manualAccentHex');
   const useManualColors = document.getElementById('useManualColors');
+  const variationTextColor = document.getElementById('variationTextColor');
+  const variationTextColorHex = document.getElementById('variationTextColorHex');
 
   const dropZone = document.getElementById('dropZone');
   const dropZoneText = document.getElementById('dropZoneText');
@@ -372,6 +418,7 @@
   bindColorPair(manualBg, manualBgHex);
   bindColorPair(manualText, manualTextHex);
   bindColorPair(manualAccent, manualAccentHex);
+  bindColorPair(variationTextColor, variationTextColorHex);
 
   // ---------- SAMPLE IMAGE ----------
   dropZone.addEventListener('click', () => sampleImgInput.click());
@@ -423,9 +470,32 @@
     return parts;
   }
 
+  const ALIGN_TOKEN_REGEX = /^\s*\[RATA\s*:\s*(kiri|tengah|kanan)\s*\]\s*$/im;
+  const ALIGN_TOKEN_MAP = { kiri: 'left', tengah: 'center', kanan: 'right' };
+
+  // Cari baris [RATA:kiri/tengah/kanan] di teks slide -> pisahkan dari teks yang akan dikirim ke AI,
+  // dan kembalikan sebagai override perataan khusus untuk slide ini (menang atas default global).
+  function extractAlignOverride(rawText){
+    const match = rawText.match(ALIGN_TOKEN_REGEX);
+    if (!match) return { cleanText: rawText, alignOverride: null };
+    const cleanText = rawText.replace(ALIGN_TOKEN_REGEX, '').trim();
+    return { cleanText, alignOverride: ALIGN_TOKEN_MAP[match[1].toLowerCase()] };
+  }
+
+  function getDefaultTextAlign(){
+    const checkedEl = document.querySelector('input[name="defaultTextAlign"]:checked');
+    return checkedEl ? checkedEl.value : 'center';
+  }
+
+  function resolveTextAlign(slideIndex){
+    const s = slides[slideIndex];
+    return (s && s.alignOverride) ? s.alignOverride : getDefaultTextAlign();
+  }
+
   // ---------- SYSTEM PROMPT ----------
-  function buildSystemPrompt(){
+  function buildSystemPrompt(allowColorEmphasis){
     const ratioLabel = EXPORT_WIDTH === EXPORT_HEIGHT ? '1:1 (persegi)' : '4:5 (vertikal)';
+    const variationColorHex = variationTextColorHex.value || '#6366f1';
     return `Anda adalah seorang Art Director & Graphic Designer profesional yang mendesain slide carousel Instagram berukuran ${EXPORT_WIDTH}x${EXPORT_HEIGHT}px (rasio ${ratioLabel}), dengan gaya editorial modern (mirip desain carousel edukasi/motivasi populer: tipografi berlapis, ada penekanan visual, tidak monoton).
 Kanvas kali ini berukuran ${EXPORT_WIDTH}x${EXPORT_HEIGHT}px. Sesuaikan ukuran font, padding, dan jumlah/ukuran dekorasi dengan proporsi kanvas ini (kanvas ${ratioLabel === '1:1 (persegi)' ? 'lebih pendek dari versi vertikal, jadi hindari memaksakan terlalu banyak blok teks berukuran besar agar tidak overflow' : 'cukup tinggi untuk hierarki teks yang lebih leluasa'}).
 Anda akan menerima teks konten mentah untuk SATU slide (bisa berisi teks Arab dan/atau Latin, bisa campuran).
@@ -436,7 +506,6 @@ Tugas Anda HANYA mengembalikan SATU objek JSON valid (tanpa markdown code fence,
   "background_gradient": null,
   "text_color": "#RRGGBB",
   "accent_color": "#RRGGBB",
-  "highlight_color": "#RRGGBB",
   "text_align": "center",
   "vertical_position": "center",
   "padding_px": 90,
@@ -449,7 +518,7 @@ Tugas Anda HANYA mengembalikan SATU objek JSON valid (tanpa markdown code fence,
       "role": "heading",
       "font_size_px": 64,
       "font_weight": "bold",
-      "highlight": false,
+      "color": null,
       "icon": null
     },
     {
@@ -457,7 +526,7 @@ Tugas Anda HANYA mengembalikan SATU objek JSON valid (tanpa markdown code fence,
       "role": "body",
       "font_size_px": 34,
       "font_weight": "normal",
-      "highlight": true,
+      "color": null,
       "icon": "✨"
     }
   ],
@@ -480,26 +549,30 @@ Jika ingin memakai gradient, isi "background_gradient" dengan objek {"from":"#he
 Aturan wajib untuk "content_blocks" (INI KUNCI UTAMA agar desain terasa modern, jangan dilewati):
 1. WAJIB memecah teks asli slide menjadi BEBERAPA blok terpisah (minimal 2 blok jika teks cukup panjang, boleh 1 blok jika teks sangat pendek seperti satu kata). JANGAN mengubah, menambah, atau menghilangkan kata dari teks asli — hanya memecahnya per kalimat/frasa/kata kunci. Gabungan seluruh "text" di semua blok harus tetap merepresentasikan teks asli secara utuh dan berurutan.
 2. "role" salah satu dari "heading" (judul/kata kunci paling penting, font besar 56-80px, font_weight bold), "subheading" (poin penting kedua, 36-48px, bold/semibold), "body" (isi/penjelasan, 26-36px, normal), atau "caption" (catatan kecil/sumber/tambahan, 18-24px, normal).
-3. Untuk teks yang panjang (lebih dari satu kalimat), SELALU coba temukan 1 kata atau frasa pendek yang paling penting untuk dijadikan blok "heading" tersendiri agar ada hierarki visual, jangan jadikan semua teks dalam satu blok "body" datar.
-4. "highlight": true HANYA untuk 1-3 blok paling penting per slide (kata/frasa kunci yang ingin ditonjolkan seperti diberi stabilo). Jangan highlight semua blok atau tidak ada highlight sama sekali kalau teks cukup panjang untuk punya poin penting.
-5. "icon": isi dengan SATU emoji yang relevan secara makna sebagai ilustrasi sederhana pendamping teks (opsional, gunakan pada maksimal 1-2 blok yang paling cocok, isi null jika tidak relevan). Jangan paksakan emoji jika tidak ada yang benar-benar relevan.
-6. Urutan array "content_blocks" merepresentasikan urutan tampil dari atas ke bawah (atau kanan ke kiri urutan logis jika is_rtl true).
-7. Kalau di teks asli ada baris yang PERSIS berisi token "[SPASI]" atau "[SPASI:angka]" (contoh: "[SPASI:300]") — ini BUKAN bagian dari kalimat, JANGAN dianggap teks biasa dan JANGAN ditampilkan sebagai teks. Ubah jadi SATU content_block khusus dengan format: {"text": "", "role": "spacer", "spacer_height_px": angka_dari_token_atau_200_jika_tidak_ada_angka, "font_size_px": 0, "font_weight": "normal", "highlight": false, "icon": null}. Blok ini akan dirender sebagai ruang kosong vertikal (biasanya dipakai user untuk menempel gambar sendiri secara manual di luar aplikasi, misalnya lewat Canva). Pertahankan posisi token ini persis sesuai urutan aslinya di antara blok-blok teks lain, jangan dipindah-pindah.
+3. Untuk teks yang panjang (lebih dari satu kalimat), SELALU coba temukan 1 kata atau frasa pendek yang paling penting untuk dijadikan blok "heading" tersendiri agar ada hierarki visual — penekanan ini WAJIB dilakukan lewat ukuran font & ketebalan (font_size_px & font_weight berbeda per role), JANGAN jadikan semua teks dalam satu blok "body" datar dengan ukuran seragam.
+4. "icon": isi dengan SATU emoji yang relevan secara makna sebagai ilustrasi sederhana pendamping teks (opsional, gunakan pada maksimal 1-2 blok yang paling cocok, isi null jika tidak relevan). Jangan paksakan emoji jika tidak ada yang benar-benar relevan.
+5. Urutan array "content_blocks" merepresentasikan urutan tampil dari atas ke bawah (atau kanan ke kiri urutan logis jika is_rtl true).
+6. Kalau di teks asli ada baris yang PERSIS berisi token "[SPASI]" atau "[SPASI:angka]" (contoh: "[SPASI:300]") — ini BUKAN bagian dari kalimat, JANGAN dianggap teks biasa dan JANGAN ditampilkan sebagai teks. Ubah jadi SATU content_block khusus dengan format: {"text": "", "role": "spacer", "spacer_height_px": angka_dari_token_atau_200_jika_tidak_ada_angka, "font_size_px": 0, "font_weight": "normal", "color": null, "icon": null}. Blok ini akan dirender sebagai ruang kosong vertikal (biasanya dipakai user untuk menempel gambar sendiri secara manual di luar aplikasi, misalnya lewat Canva). Pertahankan posisi token ini persis sesuai urutan aslinya di antara blok-blok teks lain, jangan dipindah-pindah.
+
+Aturan wajib untuk "color" (warna teks per-blok, dipakai untuk penekanan kata/frasa kunci):
+${allowColorEmphasis
+  ? `7. WAJIB pakai warna "${variationColorHex}" (persis, jangan diganti/dimodifikasi) untuk field "color" pada 1-3 blok berisi kata/frasa kunci paling penting di slide ini, supaya kata kunci itu langsung menarik perhatian mata dan warnanya KONSISTEN sama di semua slide. Isi null untuk blok yang memakai warna teks default (text_color). JANGAN mewarnai semua blok — cukup 1-3 blok paling penting saja, sisanya null. Kalau "${variationColorHex}" ternyata kurang kontras/susah dibaca di atas background_color slide ini, sesuaikan background_color/text_color slide ini (bukan warna variasinya) supaya kombinasinya tetap enak dibaca.`
+  : `7. WAJIB isi "color": null untuk SEMUA blok tanpa terkecuali — TIDAK BOLEH ada variasi warna teks sama sekali di slide ini. Penekanan kata/frasa kunci HANYA boleh lewat font_size_px yang lebih besar dan/atau font_weight "bold", BUKAN lewat warna.`}
 
 Aturan wajib untuk "content_image_placement":
-7. Field ini HANYA diisi (bukan null) jika pesan user secara eksplisit menyebutkan ada GAMBAR KONTEN yang dilampirkan untuk slide ini (biasanya muncul di pesan revisi lanjutan, bukan di generate awal). Jika tidak ada gambar konten yang disebutkan, WAJIB isi null.
-8. Jika diisi, formatnya: {"position": "top"|"bottom"|"left"|"right", "size_pct": number (25-55)} — "position" adalah sisi kanvas mana yang dipakai untuk gambar (pertimbangkan orientasi gambar: gambar landscape/lebar lebih cocok "top"/"bottom", gambar potret/tinggi lebih cocok "left"/"right"), dan "size_pct" adalah persentase luas kanvas yang dipakai gambar.
-9. Kalau "content_image_placement" diisi, WAJIB sesuaikan "padding_px", "vertical_position", dan susunan "content_blocks" supaya teks tidak bertumpuk dengan area yang direservasi untuk gambar tersebut (mis. kalau gambar di "bottom" dengan size_pct 40, taruh vertical_position "top" dan pastikan teks muat di 60% area atas).
-10. Gambar konten ini BUKAN untuk dianalisis warnanya dan BUKAN untuk mempengaruhi palet warna slide — ini beda dengan gambar sampel gaya (kalau ada) yang memang dipakai untuk analisis warna. Jangan campur adukkan dua hal ini.
+8. Field ini HANYA diisi (bukan null) jika pesan user secara eksplisit menyebutkan ada GAMBAR KONTEN yang dilampirkan untuk slide ini (biasanya muncul di pesan revisi lanjutan, bukan di generate awal). Jika tidak ada gambar konten yang disebutkan, WAJIB isi null.
+9. Jika diisi, formatnya: {"position": "top"|"bottom"|"left"|"right", "size_pct": number (25-55)} — "position" adalah sisi kanvas mana yang dipakai untuk gambar (pertimbangkan orientasi gambar: gambar landscape/lebar lebih cocok "top"/"bottom", gambar potret/tinggi lebih cocok "left"/"right"), dan "size_pct" adalah persentase luas kanvas yang dipakai gambar.
+10. Kalau "content_image_placement" diisi, WAJIB sesuaikan "padding_px", "vertical_position", dan susunan "content_blocks" supaya teks tidak bertumpuk dengan area yang direservasi untuk gambar tersebut (mis. kalau gambar di "bottom" dengan size_pct 40, taruh vertical_position "top" dan pastikan teks muat di 60% area atas).
+11. Gambar konten ini BUKAN untuk dianalisis warnanya dan BUKAN untuk mempengaruhi palet warna slide — ini beda dengan gambar sampel gaya (kalau ada) yang memang dipakai untuk analisis warna. Jangan campur adukkan dua hal ini.
 
 Aturan wajib lainnya:
-11. background_color dan text_color WAJIB kontras tinggi agar teks sangat mudah dibaca. "highlight_color" harus tetap membuat teks di atasnya terbaca jelas (biasanya warna terang/pastel jika text_color gelap, atau warna gelap jika text_color terang).
-12. Jika teks konten mengandung karakter Arab, "is_rtl" HARUS true, dan "text_align" default "right" kecuali konteks menuntut lain.
-13. "decorations" maksimal 4 elemen dekoratif (garis, lingkaran, atau persegi) yang mempercantik slide TANPA menutupi area teks utama, dan TANPA menutupi area "content_image_placement" jika ada. type hanya boleh "circle", "rectangle", atau "line".
-14. Jika user memberi warna manual sebagai acuan utama, WAJIB gunakan warna tersebut (atau turunannya yang harmonis) untuk background_color/text_color/accent_color/highlight_color.
-15. Jika disertakan gambar sampel gaya (bukan gambar konten), analisis palet warna dominan & mood gambar tersebut, lalu padukan dengan warna manual (jika ada) untuk membangun palet slide.
-16. "vertical_position" salah satu dari "top", "center", "bottom" — sesuaikan dengan komposisi paling estetis untuk teks tersebut.
-17. HANYA kembalikan objek JSON valid tersebut, tidak ada teks lain, tidak ada markdown.`;
+12. background_color dan text_color WAJIB kontras tinggi agar teks sangat mudah dibaca.
+13. Jika teks konten mengandung karakter Arab, "is_rtl" HARUS true (ini murni soal arah baca/susunan ikon, TIDAK terkait "text_align" — nilai "text_align" akan selalu ditentukan lewat catatan tata letak terpisah di pesan user, ikuti itu apa adanya).
+14. "decorations" maksimal 4 elemen dekoratif (garis, lingkaran, atau persegi) yang mempercantik slide TANPA menutupi area teks utama, dan TANPA menutupi area "content_image_placement" jika ada. type hanya boleh "circle", "rectangle", atau "line".
+15. Jika user memberi warna manual sebagai acuan utama, WAJIB gunakan warna tersebut (atau turunannya yang harmonis) untuk background_color/text_color/accent_color.
+16. Jika disertakan gambar sampel gaya (bukan gambar konten), analisis palet warna dominan & mood gambar tersebut, lalu padukan dengan warna manual (jika ada) untuk membangun palet slide.
+17. "vertical_position" salah satu dari "top", "center", "bottom" — sesuaikan dengan komposisi paling estetis untuk teks tersebut.
+18. HANYA kembalikan objek JSON valid tersebut, tidak ada teks lain, tidak ada markdown.`;
   }
 
 
@@ -536,7 +609,7 @@ Aturan wajib lainnya:
     return /overload|quota|rate.?limit|429|503|resource_exhausted|too many requests|capacity/.test(msg);
   }
 
-  async function callGemini(providerObj, contents){
+  async function callGemini(providerObj, contents, allowColorEmphasis){
     const apiKey = providerObj.apiKey.trim();
     const model = providerObj.model || PROVIDER_DEFS.gemini.defaultModel;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -545,7 +618,7 @@ Aturan wajib lainnya:
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: contents,
-        systemInstruction: { parts: [{ text: buildSystemPrompt() }] },
+        systemInstruction: { parts: [{ text: buildSystemPrompt(allowColorEmphasis) }] },
         generationConfig: {
           temperature: 0.85,
           responseMimeType: 'application/json',
@@ -584,12 +657,12 @@ Aturan wajib lainnya:
 
   // Converts canonical Gemini-style contents ({role, parts:[{text}|{inline_data}]}) ke format
   // OpenAI-compatible "messages" (dipakai Groq & OpenRouter).
-  function callOpenAICompatible(providerObj, contents){
+  function callOpenAICompatible(providerObj, contents, allowColorEmphasis){
     const apiKey = providerObj.apiKey.trim();
     const model = providerObj.model || PROVIDER_DEFS[providerObj.provider].defaultModel;
     const baseUrl = OPENAI_COMPAT_BASE_URL[providerObj.provider];
 
-    const messages = [{ role: 'system', content: buildSystemPrompt() }];
+    const messages = [{ role: 'system', content: buildSystemPrompt(allowColorEmphasis) }];
     contents.forEach(entry => {
       const role = entry.role === 'model' ? 'assistant' : 'user';
       const blocks = entry.parts.map(part => {
@@ -640,18 +713,18 @@ Aturan wajib lainnya:
     });
   }
 
-  async function callProvider(providerObj, contents){
+  async function callProvider(providerObj, contents, allowColorEmphasis){
     if (!providerObj.apiKey.trim()) throw new Error('API Key belum diisi.');
     if (providerObj.provider === 'gemini'){
-      return await callGemini(providerObj, contents);
+      return await callGemini(providerObj, contents, allowColorEmphasis);
     }
-    return await callOpenAICompatible(providerObj, contents);
+    return await callOpenAICompatible(providerObj, contents, allowColorEmphasis);
   }
 
   // Coba tiap provider sesuai urutan prioritas di UI. Kalau providernya overload/kuota habis,
   // otomatis lanjut ke provider berikutnya yang key-nya terisi. Kalau errornya bukan soal
   // overload/kuota (mis. API key salah), langsung berhenti dan laporkan.
-  async function callAIWithFallback(contents){
+  async function callAIWithFallback(contents, allowColorEmphasis){
     const active = providers.filter(p => p.apiKey.trim().length > 0);
     if (active.length === 0){
       throw new Error('Mohon isi minimal satu API key provider AI di sidebar.');
@@ -661,7 +734,7 @@ Aturan wajib lainnya:
       const p = active[i];
       const label = PROVIDER_DEFS[p.provider].label;
       try {
-        return await callProvider(p, contents);
+        return await callProvider(p, contents, allowColorEmphasis);
       } catch(err){
         attempts.push(`${label}: ${err.message}`);
         const isLast = i === active.length - 1;
@@ -676,18 +749,36 @@ Aturan wajib lainnya:
     }
   }
 
-  async function generateDesignForSlide(rawText, isRtlHint){
-    const contents = [
-      { role: 'user', parts: buildUserMessageParts(rawText, isRtlHint ? '\n\nCatatan: teks ini terdeteksi mengandung karakter Arab.' : '') }
-    ];
-    return await callAIWithFallback(contents);
+  function isColorEmphasisAllowed(slideIndex){
+    const checkedEl = document.querySelector('input[name="textColorMode"]:checked');
+    const mode = checkedEl ? checkedEl.value : 'none';
+    if (mode === 'all') return true;
+    if (mode === 'slide1') return slideIndex === 0;
+    return false;
   }
 
-  async function reviseDesignForSlide(rawText, previousDesign, instruction, contentImageDataUrl){
+  const ALIGN_LABEL_ID = { left: 'kiri', center: 'tengah', right: 'kanan' };
+
+  async function generateDesignForSlide(rawText, isRtlHint, slideIndex){
+    const targetAlign = resolveTextAlign(slideIndex);
+    const alignNote = `\n\nCatatan tata letak: "text_align" untuk slide ini WAJIB "${targetAlign}" (rata ${ALIGN_LABEL_ID[targetAlign]}). Susun komposisi teks, ikon, dan dekorasi supaya cocok dengan perataan ini.`;
+    const extra = (isRtlHint ? '\n\nCatatan: teks ini terdeteksi mengandung karakter Arab.' : '') + alignNote;
+    const contents = [
+      { role: 'user', parts: buildUserMessageParts(rawText, extra) }
+    ];
+    const design = await callAIWithFallback(contents, isColorEmphasisAllowed(slideIndex));
+    design.text_align = targetAlign; // paksa override -> jaminan 100% akurat, tidak bergantung kepatuhan AI
+    return design;
+  }
+
+  async function reviseDesignForSlide(rawText, previousDesign, instruction, contentImageDataUrl, slideIndex){
+    const targetAlign = resolveTextAlign(slideIndex);
     const revisionParts = [];
     let instructionText = instruction && instruction.trim()
       ? `Tolong revisi desain JSON di atas sesuai instruksi berikut, lalu kembalikan LAGI objek JSON LENGKAP dengan struktur yang sama (jangan hanya kirim bagian yang berubah):\n\nInstruksi revisi: "${instruction}"`
       : `Tolong kembalikan LAGI objek JSON LENGKAP dengan struktur yang sama (jangan hanya kirim bagian yang berubah), sesuaikan dengan catatan tambahan di bawah ini.`;
+
+    instructionText += `\n\nCatatan tata letak: "text_align" untuk slide ini WAJIB tetap "${targetAlign}" (rata ${ALIGN_LABEL_ID[targetAlign]}).`;
 
     if (contentImageDataUrl){
       const match = contentImageDataUrl.match(/^data:(.+?);base64,(.+)$/);
@@ -705,7 +796,9 @@ Aturan wajib lainnya:
       { role: 'model', parts: [{ text: JSON.stringify(previousDesign) }] },
       { role: 'user', parts: revisionParts }
     ];
-    return await callAIWithFallback(contents);
+    const design = await callAIWithFallback(contents, isColorEmphasisAllowed(slideIndex));
+    design.text_align = targetAlign; // paksa override -> jaminan 100% akurat, tidak bergantung kepatuhan AI
+    return design;
   }
 
   // ---------- RENDER SLIDE DOM (full resolution 1080x1350) ----------
@@ -770,6 +863,7 @@ Aturan wajib lainnya:
 
     // ---- text container ----
     const textWrap = document.createElement('div');
+    textWrap.dataset.textWrap = 'true';
     textWrap.style.position = 'absolute';
     textWrap.style.left = '0';
     textWrap.style.right = '0';
@@ -788,7 +882,7 @@ Aturan wajib lainnya:
 
     const blocks = Array.isArray(design.content_blocks) && design.content_blocks.length > 0
       ? design.content_blocks
-      : [{ text: rawText, role: 'body', font_size_px: 40, font_weight: 'normal', highlight: false, icon: null }];
+      : [{ text: rawText, role: 'body', font_size_px: 40, font_weight: 'normal', color: null, icon: null }];
 
     blocks.forEach(block => {
       // blok khusus "spacer" (dari token [SPASI] yang diketik user) → cuma render ruang kosong, tanpa teks
@@ -819,6 +913,9 @@ Aturan wajib lainnya:
 
       const textSpan = document.createElement('span');
       textSpan.textContent = block.text || '';
+      // "color" dipakai buat penekanan kata/frasa kunci (kalau mode-nya diaktifkan) —
+      // ini murni warna teks, TANPA kotak background apapun, jadi tidak ada risiko presisi
+      // seperti kasus highlight-background yang berulang kali meleset di html2canvas.
       textSpan.style.color = block.color || design.text_color || '#111111';
       textSpan.style.fontSize = (block.font_size_px || (block.role === 'heading' ? 60 : block.role === 'caption' ? 22 : 36)) + 'px';
 
@@ -837,35 +934,7 @@ Aturan wajib lainnya:
       textSpan.style.wordBreak = 'break-word';
       textSpan.style.fontFamily = "'Tajawal', 'Calibri', sans-serif";
 
-      if (block.highlight){
-        // Teknik anti-meleset di html2canvas: background TIDAK ditaruh langsung di elemen teks
-        // (itu butuh html2canvas menghitung ulang tinggi baris dari font metric -> sering salah).
-        // Sebagai gantinya, background dibuat sebagai layer terpisah yang menutupi 100% "kotak padding"
-        // milik pembungkusnya secara geometris murni (position:relative + inset:0), murni box model,
-        // bukan dihitung dari line-height/font metric — ini yang terbukti presisi di html2canvas.
-        const highlightWrap = document.createElement('span');
-        highlightWrap.style.position = 'relative';
-        highlightWrap.style.display = 'inline-block';
-        highlightWrap.style.padding = '6px 14px';
-        highlightWrap.style.borderRadius = '8px';
-
-        const bgLayer = document.createElement('span');
-        bgLayer.style.position = 'absolute';
-        bgLayer.style.inset = '0';
-        bgLayer.style.backgroundColor = design.highlight_color || design.accent_color || '#fde047';
-        bgLayer.style.borderRadius = '8px';
-        bgLayer.style.zIndex = '0';
-        bgLayer.style.pointerEvents = 'none';
-
-        textSpan.style.position = 'relative';
-        textSpan.style.zIndex = '1';
-
-        highlightWrap.appendChild(bgLayer);
-        highlightWrap.appendChild(textSpan);
-        blockRow.appendChild(highlightWrap);
-      } else {
-        blockRow.appendChild(textSpan);
-      }
+      blockRow.appendChild(textSpan);
       textWrap.appendChild(blockRow);
     });
 
@@ -1079,8 +1148,7 @@ Aturan wajib lainnya:
     captureSandbox.innerHTML = '';
     captureSandbox.appendChild(fullNode);
 
-    // pastikan font web (Tajawal) sudah selesai dimuat sebelum di-capture,
-    // supaya html2canvas tidak menggambar pakai font fallback sesaat sebelum font asli siap
+    // pastikan font web (Tajawal) sudah selesai dimuat sebelum di-capture
     try { await document.fonts.ready; } catch(e){}
 
     const canvasResult = await html2canvas(fullNode, {
@@ -1139,14 +1207,18 @@ Aturan wajib lainnya:
 
     applyChosenRatio();
 
-    slides = rawParts.map((text, i) => ({
-      id: i,
-      rawText: text,
-      design: null,
-      status: 'pending',
-      isRtl: forceRtl.checked || containsArabic(text),
-      contentImage: null
-    }));
+    slides = rawParts.map((text, i) => {
+      const { cleanText, alignOverride } = extractAlignOverride(text);
+      return {
+        id: i,
+        rawText: cleanText,
+        design: null,
+        status: 'pending',
+        isRtl: forceRtl.checked || containsArabic(cleanText),
+        contentImage: null,
+        alignOverride: alignOverride
+      };
+    });
 
     emptyState.classList.add('hidden');
     slidesContainer.innerHTML = '';
@@ -1162,7 +1234,7 @@ Aturan wajib lainnya:
 
     for (let i = 0; i < slides.length; i++){
       try {
-        const design = await generateDesignForSlide(slides[i].rawText, slides[i].isRtl);
+        const design = await generateDesignForSlide(slides[i].rawText, slides[i].isRtl, i);
         slides[i].design = design;
         renderSlidePreview(i);
         setStatus(i, 'done');
@@ -1223,7 +1295,7 @@ Aturan wajib lainnya:
     }
     setStatus(index, 'loading');
     try {
-      const design = await generateDesignForSlide(slides[index].rawText, slides[index].isRtl);
+      const design = await generateDesignForSlide(slides[index].rawText, slides[index].isRtl, index);
       slides[index].design = design;
       renderSlidePreview(index);
       setStatus(index, 'done');
@@ -1248,7 +1320,7 @@ Aturan wajib lainnya:
 
     setStatus(index, 'loading');
     try {
-      const newDesign = await reviseDesignForSlide(slides[index].rawText, slides[index].design, instruction, contentImage);
+      const newDesign = await reviseDesignForSlide(slides[index].rawText, slides[index].design, instruction, contentImage, index);
       slides[index].design = newDesign;
       renderSlidePreview(index);
       setStatus(index, 'done');
