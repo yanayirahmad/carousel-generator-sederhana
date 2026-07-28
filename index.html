@@ -648,14 +648,19 @@
   }
 
   const ALIGN_TOKEN_REGEX = /^\s*\[\s*RATA\s*:\s*(kiri|tengah|kanan)\s*\]\s*$/im;
+  const ALIGN_TOKEN_REGEX_GLOBAL = /^\s*\[\s*RATA\s*:\s*(kiri|tengah|kanan)\s*\]\s*$/gim;
   const ALIGN_TOKEN_MAP = { kiri: 'left', tengah: 'center', kanan: 'right' };
 
   // Cari baris [RATA:kiri/tengah/kanan] di teks slide -> pisahkan dari teks yang akan dikirim ke AI,
   // dan kembalikan sebagai override perataan khusus untuk slide ini (menang atas default global).
+  // Catatan: [RATA:...] itu setting untuk SATU SLIDE PENUH, bukan per-baris/paragraf -- kalau
+  // diketik berkali-kali dalam 1 slide, cuma kemunculan PERTAMA yang dipakai nilainya, tapi
+  // SEMUA kemunculan tetap dihapus dari teks (supaya tidak ada sisa tulisan "[RATA:...]" yang
+  // ikut ke-print di slide).
   function extractAlignOverride(rawText){
     const match = rawText.match(ALIGN_TOKEN_REGEX);
     if (!match) return { cleanText: rawText, alignOverride: null };
-    const cleanText = rawText.replace(ALIGN_TOKEN_REGEX, '').trim();
+    const cleanText = rawText.replace(ALIGN_TOKEN_REGEX_GLOBAL, '').trim();
     return { cleanText, alignOverride: ALIGN_TOKEN_MAP[match[1].toLowerCase()] };
   }
 
@@ -1518,6 +1523,11 @@ Aturan wajib lainnya:
         lineWrap.style.whiteSpace = 'pre-wrap';
         lineWrap.style.wordBreak = 'break-word';
         lineWrap.style.fontFamily = "'Calibri', sans-serif";
+        // PENTING: justify-content di blockRow cuma ngatur posisi ITEM (span) sebagai satu kesatuan,
+        // TIDAK ngatur perataan baris-baris hasil wrap DI DALAM span itu sendiri kalau teksnya panjang.
+        // Makanya text-align eksplisit wajib di-set di sini juga, supaya teks panjang yang wrap ke
+        // beberapa baris tetap ikut rata tengah/kiri/kanan sesuai design.text_align, bukan nempel kiri.
+        lineWrap.style.textAlign = design.text_align === 'left' ? 'left' : (design.text_align === 'right' ? 'right' : 'center');
 
         const segments = parseInlineFormatting(contentText);
         segments.forEach(seg => {
