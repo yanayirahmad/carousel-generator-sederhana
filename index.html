@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Carousel Generator</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -117,10 +114,13 @@
     <!-- TEKS INPUT -->
     <div class="mb-5">
       <label class="block text-sm font-semibold mb-1.5">Konten Teks per Slide</label>
+      <div id="fmt-toolbar-main" class="flex flex-wrap gap-1 mb-1.5"></div>
       <textarea id="rawTextArea" rows="10" placeholder="Slide 1: teks di sini...&#10;---&#10;Slide 2: teks di sini (bisa Arab: بسم الله الرحمن الرحيم)&#10;---&#10;Slide 3..."
         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" dir="auto"></textarea>
       <p class="text-xs text-slate-400 mt-1">Pisahkan tiap slide dengan baris berisi <code class="bg-slate-100 px-1 rounded">---</code></p>
+      <p class="text-xs text-slate-400 mt-1">Tip: ketik <code class="bg-slate-100 px-1 rounded">[JUDUL]</code> / <code class="bg-slate-100 px-1 rounded">[ISI]</code> di baris sendiri buat menandai role teks secara pasti (font Judul=45px bold, Isi=35px) — tidak perlu AI menebak lagi mana judul mana isi.</p>
       <p class="text-xs text-slate-400 mt-1">Tip: ketik <code class="bg-slate-100 px-1 rounded">[SPASI]</code> atau <code class="bg-slate-100 px-1 rounded">[SPASI:300]</code> di baris sendiri buat kasih ruang kosong (misal buat nempel gambar manual nanti).</p>
+      <p class="text-xs text-slate-400 mt-1">Tip: ketik <code class="bg-slate-100 px-1 rounded">[GAMBAR]</code> atau <code class="bg-slate-100 px-1 rounded">[GAMBAR:bawah:40]</code> di baris sendiri buat pesan frame gambar dari awal (posisi: atas/bawah/kiri/kanan, angka = persen luas kanvas). Upload gambarnya nanti lewat tombol 🖼️ di kartu slide setelah generate — otomatis pas ke frame, gratis tanpa panggil API lagi.</p>
     </div>
 
     <!-- STYLING MANUAL -->
@@ -212,6 +212,22 @@
       </div>
 
       <p class="text-xs text-slate-400 mt-1.5">Kalau tidak ada platform dicentang, dipakai titik kecil aksen (seperti biasa). Kalau ada yang dicentang, titik aksen otomatis diganti logo platform tersebut.</p>
+    </div>
+
+    <!-- MODE GENERATE -->
+    <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
+      <label class="block text-sm font-semibold mb-2">Mode Generate</label>
+      <div class="space-y-1.5">
+        <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+          <input type="radio" name="generateMode" value="per-slide" checked class="accent-indigo-600">
+          Generate Per-Slide (lebih stabil, 1 slide = 1 request)
+        </label>
+        <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
+          <input type="radio" name="generateMode" value="combined" class="accent-indigo-600">
+          Generate Sekaligus (hemat RPD, semua slide = 1 request)
+        </label>
+      </div>
+      <p class="text-xs text-slate-400 mt-1.5">"Sekaligus" jauh lebih hemat kuota harian, tapi kalau gagal/kepotong, SEMUA slide gagal bareng (bukan cuma 1). Lebih aman dipakai buat slide full teks; kalau ada gambar, "Per-Slide" lebih disarankan.</p>
     </div>
 
     <!-- RTL TOGGLE -->
@@ -550,11 +566,14 @@
     wm.style.alignItems = 'center';
     wm.style.gap = '10px';
     wm.style.color = color;
+    wm.style.lineHeight = '1'; // kurangi ambiguitas perhitungan tinggi baris di html2canvas
 
     function makeIcon(key){
       const span = document.createElement('span');
       span.style.display = 'inline-flex';
+      span.style.alignItems = 'center';
       span.style.color = color;
+      span.style.lineHeight = '1';
       span.innerHTML = PLATFORM_ICONS[key];
       return span;
     }
@@ -570,6 +589,7 @@
       wm.appendChild(dot);
 
       const textEl = document.createElement('span');
+      textEl.style.lineHeight = '1';
       textEl.textContent = config.name;
       wm.appendChild(textEl);
       return wm;
@@ -580,9 +600,11 @@
       const groupWrap = document.createElement('span');
       groupWrap.style.display = 'inline-flex';
       groupWrap.style.alignItems = 'center';
+      groupWrap.style.lineHeight = '1';
       groupWrap.style.gap = '6px';
       group.platforms.forEach(p => groupWrap.appendChild(makeIcon(p.key)));
       const nameEl = document.createElement('span');
+      nameEl.style.lineHeight = '1';
       nameEl.textContent = group.name;
       groupWrap.appendChild(nameEl);
       wm.appendChild(groupWrap);
@@ -625,7 +647,7 @@
     return parts;
   }
 
-  const ALIGN_TOKEN_REGEX = /^\s*\[RATA\s*:\s*(kiri|tengah|kanan)\s*\]\s*$/im;
+  const ALIGN_TOKEN_REGEX = /^\s*\[\s*RATA\s*:\s*(kiri|tengah|kanan)\s*\]\s*$/im;
   const ALIGN_TOKEN_MAP = { kiri: 'left', tengah: 'center', kanan: 'right' };
 
   // Cari baris [RATA:kiri/tengah/kanan] di teks slide -> pisahkan dari teks yang akan dikirim ke AI,
@@ -647,14 +669,198 @@
     return (s && s.alignOverride) ? s.alignOverride : getDefaultTextAlign();
   }
 
+  const SPACER_TOKEN_REGEX = /\[\s*SPASI(?:\s*:\s*\d+)?\s*\]/i;
+  function hasSpacerToken(rawText){
+    return SPACER_TOKEN_REGEX.test(rawText);
+  }
+
+  const IMAGE_FRAME_REGEX = /^\s*\[\s*GAMBAR(?:\s*:\s*(atas|bawah|tengah|kiri|kanan)\s*:\s*(\d+))?\s*\]\s*$/im;
+  const IMAGE_POS_MAP = { atas: 'bottom', bawah: 'bottom', tengah: 'center', kiri: 'left', kanan: 'right' };
+
+  // Cari baris [GAMBAR] atau [GAMBAR:posisi:persen] -> kembalikan sebagai frame gambar deterministik
+  // (posisi & ukuran SUDAH pasti dari token, tidak perlu ditebak AI). Posisi "atas" sengaja di-fallback
+  // jadi "bottom" (opsi atas dihapus, terlalu ribet ngatur teks di sekitarnya).
+  // Untuk posisi "tengah": token SENGAJA TIDAK dihapus dari teks di sini -- ia tetap dikirim ke AI
+  // supaya AI bisa menyisipkan "slot gambar" persis di antara blok teks lain sesuai posisi aslinya
+  // (mirip [SPASI], tapi isinya gambar bukan ruang kosong).
+  function extractImageFrame(rawText){
+    const match = rawText.match(IMAGE_FRAME_REGEX);
+    if (!match) return { cleanText: rawText, imageFrame: null };
+    const rawPos = match[1] ? match[1].toLowerCase() : 'bawah';
+    const position = IMAGE_POS_MAP[rawPos] || 'bottom';
+    const size_pct = match[2] ? parseInt(match[2], 10) : 35;
+
+    if (position === 'center'){
+      return { cleanText: rawText, imageFrame: { position, size_pct } };
+    }
+
+    const cleanText = rawText.replace(IMAGE_FRAME_REGEX, '').trim();
+    return { cleanText, imageFrame: { position, size_pct } };
+  }
+
+  const STRUCTURE_TAG_REGEX = /^\s*\[\s*(JUDUL|ISI)\s*\]\s*$/im;
+  function hasStructureTags(rawText){
+    return STRUCTURE_TAG_REGEX.test(rawText);
+  }
+
+  // Kalau user pakai [JUDUL]/[ISI], KITA yang bangun content_blocks sendiri (bukan AI) --
+  // role & pembagian blok jadi 100% deterministik, tidak ada lagi tebak-tebakan AI soal
+  // "ini judul atau bukan". [SPASI] & [GAMBAR:tengah:N] tetap diproses inline di sini juga
+  // (posisinya di antara JUDUL/ISI ikut kejaga). Token [GAMBAR:atas/bawah/kiri/kanan] SUDAH
+  // dihapus lebih dulu oleh extractImageFrame, jadi tidak akan ketemu di sini.
+  function buildBlocksFromTags(rawText){
+    const lines = rawText.split(/\r?\n/);
+    const blocks = [];
+    let currentRole = 'body';
+    let buffer = [];
+
+    function flush(){
+      const text = buffer.join('\n').trim();
+      if (text) blocks.push({ text, role: currentRole, color: null, icon: null });
+      buffer = [];
+    }
+
+    lines.forEach(line => {
+      const trimmed = line.trim();
+
+      const tagMatch = trimmed.match(/^\[\s*(JUDUL|ISI)\s*\]$/i);
+      if (tagMatch){
+        flush();
+        currentRole = tagMatch[1].toUpperCase() === 'JUDUL' ? 'heading' : 'body';
+        return;
+      }
+
+      const spacerMatch = trimmed.match(/^\[\s*SPASI(?:\s*:\s*(\d+))?\s*\]$/i);
+      if (spacerMatch){
+        flush();
+        blocks.push({ text: '', role: 'spacer', spacer_height_px: spacerMatch[1] ? parseInt(spacerMatch[1], 10) : 200, color: null, icon: null });
+        return;
+      }
+
+      const imgMatch = trimmed.match(/^\[\s*GAMBAR\s*:\s*tengah\s*:\s*(\d+)\s*\]$/i);
+      if (imgMatch){
+        flush();
+        blocks.push({ text: '', role: 'image-slot', size_pct: parseInt(imgMatch[1], 10), color: null, icon: null });
+        return;
+      }
+
+      buffer.push(line);
+    });
+    flush();
+
+    return blocks;
+  }
+
+  // ---- FORMAT TEKS INLINE (bold/italic/underline/strike/superscript) ----
+  // Sintaks mirip markdown, di-toggle per penanda: **bold**, *italic*, __underline__, ~~coret~~, ^superskrip^
+  // Ini murni diproses & dirender oleh KODE kita sendiri (bukan AI) -- user klik tombol toolbar,
+  // penanda disisipkan ke teks, lalu di render-time diuraikan jadi span-span dengan style masing-masing.
+  function parseInlineFormatting(text){
+    const tokens = [];
+    let i = 0;
+    let bold = false, italic = false, underline = false, strike = false, sup = false;
+    let buffer = '';
+    function flush(){
+      if (buffer.length > 0) tokens.push({ text: buffer, bold, italic, underline, strike, sup });
+      buffer = '';
+    }
+    while (i < text.length){
+      if (text[i] === '*' && text[i+1] === '*'){ flush(); bold = !bold; i += 2; continue; }
+      if (text[i] === '_' && text[i+1] === '_'){ flush(); underline = !underline; i += 2; continue; }
+      if (text[i] === '~' && text[i+1] === '~'){ flush(); strike = !strike; i += 2; continue; }
+      if (text[i] === '*'){ flush(); italic = !italic; i += 1; continue; }
+      if (text[i] === '^'){ flush(); sup = !sup; i += 1; continue; }
+      buffer += text[i]; i++;
+    }
+    flush();
+    return tokens;
+  }
+
+  // Deteksi baris list ("- item" atau "1. item") -> kembalikan penanda + sisa teksnya
+  // Deteksi baris list -> kembalikan tipe + gaya penanda + sisa teksnya.
+  // Bullet: "- teks" (bulat, default), "[]- teks" (kotak), "[v]- teks" (centang),
+  //         "[x]- teks" (silang), "[>]- teks" (panah kanan)
+  // Numbering: "1. teks" (angka), "A. teks" (huruf besar), "a. teks" (huruf kecil)
+  function extractListMarker(lineText){
+    let m;
+    if ((m = lineText.match(/^\s*\[\]-\s+(.*)$/))) return { type: 'bullet', style: 'square', content: m[1] };
+    if ((m = lineText.match(/^\s*\[v\]-\s+(.*)$/i))) return { type: 'bullet', style: 'check', content: m[1] };
+    if ((m = lineText.match(/^\s*\[x\]-\s+(.*)$/i))) return { type: 'bullet', style: 'cross', content: m[1] };
+    if ((m = lineText.match(/^\s*\[>\]-\s+(.*)$/))) return { type: 'bullet', style: 'arrow', content: m[1] };
+    if ((m = lineText.match(/^\s*-\s+(.*)$/))) return { type: 'bullet', style: 'dot', content: m[1] };
+    if ((m = lineText.match(/^\s*(\d+)\.\s+(.*)$/))) return { type: 'number', label: m[1], content: m[2] };
+    if ((m = lineText.match(/^\s*([A-Z])\.\s+(.*)$/))) return { type: 'number', label: m[1], content: m[2] };
+    if ((m = lineText.match(/^\s*([a-z])\.\s+(.*)$/))) return { type: 'number', label: m[1], content: m[2] };
+    return null;
+  }
+
+  // ---- TOOLBAR FORMAT TEKS (tombol -> sisipkan penanda ke textarea yang jadi target) ----
+  function wrapSelection(textareaEl, before, after){
+    const start = textareaEl.selectionStart;
+    const end = textareaEl.selectionEnd;
+    const value = textareaEl.value;
+    const closer = after !== undefined ? after : before;
+    const selected = value.slice(start, end);
+    textareaEl.value = value.slice(0, start) + before + selected + closer + value.slice(end);
+    textareaEl.focus();
+    textareaEl.selectionStart = start + before.length;
+    textareaEl.selectionEnd = start + before.length + selected.length;
+    textareaEl.dispatchEvent(new Event('input'));
+  }
+
+  function insertAtLineStart(textareaEl, prefix){
+    const start = textareaEl.selectionStart;
+    const value = textareaEl.value;
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    textareaEl.value = value.slice(0, lineStart) + prefix + value.slice(lineStart);
+    textareaEl.focus();
+    const newPos = start + prefix.length;
+    textareaEl.selectionStart = textareaEl.selectionEnd = newPos;
+    textareaEl.dispatchEvent(new Event('input'));
+  }
+
+  const FORMAT_TOOLBAR_BUTTONS = [
+    { label: 'B', title: 'Bold (**teks**)', cls: 'font-bold', action: (ta) => wrapSelection(ta, '**') },
+    { label: 'I', title: 'Italic (*teks*)', cls: 'italic', action: (ta) => wrapSelection(ta, '*') },
+    { label: 'U', title: 'Underline (__teks__)', cls: 'underline', action: (ta) => wrapSelection(ta, '__') },
+    { label: 'S', title: 'Coret (~~teks~~)', cls: 'line-through', action: (ta) => wrapSelection(ta, '~~') },
+    { label: 'x²', title: 'Superskrip (^teks^)', cls: '', action: (ta) => wrapSelection(ta, '^') },
+    { label: '• List', title: 'Bullet bulat', cls: '', action: (ta) => insertAtLineStart(ta, '- ') },
+    { label: '▪ List', title: 'Bullet kotak', cls: '', action: (ta) => insertAtLineStart(ta, '[]- ') },
+    { label: '✓ List', title: 'Bullet centang', cls: '', action: (ta) => insertAtLineStart(ta, '[v]- ') },
+    { label: '✗ List', title: 'Bullet silang', cls: '', action: (ta) => insertAtLineStart(ta, '[x]- ') },
+    { label: '➤ List', title: 'Bullet panah kanan', cls: '', action: (ta) => insertAtLineStart(ta, '[>]- ') },
+    { label: '1. List', title: 'Numbering angka (1,2,3)', cls: '', action: (ta) => insertAtLineStart(ta, '1. ') },
+    { label: 'A. List', title: 'Numbering huruf besar (A,B,C)', cls: '', action: (ta) => insertAtLineStart(ta, 'A. ') },
+    { label: 'a. List', title: 'Numbering huruf kecil (a,b,c)', cls: '', action: (ta) => insertAtLineStart(ta, 'a. ') },
+    { label: '[JUDUL]', title: 'Tandai baris berikut sebagai Judul (45px bold)', cls: 'text-indigo-600', action: (ta) => insertAtLineStart(ta, '[JUDUL]\n') },
+    { label: '[ISI]', title: 'Tandai baris berikut sebagai Isi (35px normal)', cls: 'text-indigo-600', action: (ta) => insertAtLineStart(ta, '[ISI]\n') }
+  ];
+
+  function renderFormatToolbar(containerEl, textareaEl){
+    containerEl.innerHTML = '';
+    FORMAT_TOOLBAR_BUTTONS.forEach(btn => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.title = btn.title;
+      el.textContent = btn.label;
+      el.className = `px-2 py-1 text-[11px] border border-slate-300 rounded hover:bg-slate-100 ${btn.cls}`;
+      el.addEventListener('click', () => btn.action(textareaEl));
+      containerEl.appendChild(el);
+    });
+  }
+
   // ---------- SYSTEM PROMPT ----------
-  function buildSystemPrompt(allowColorEmphasis){
+  function buildSystemPrompt(allowColorEmphasis, batchCount){
     const ratioLabel = EXPORT_WIDTH === EXPORT_HEIGHT ? '1:1 (persegi)' : '4:5 (vertikal)';
     const variationColorHex = variationTextColorHex.value || '#6366f1';
+    const isBatch = batchCount && batchCount > 1;
     return `Anda adalah seorang Art Director & Graphic Designer profesional yang mendesain slide carousel Instagram berukuran ${EXPORT_WIDTH}x${EXPORT_HEIGHT}px (rasio ${ratioLabel}), dengan gaya editorial modern (mirip desain carousel edukasi/motivasi populer: tipografi berlapis, ada penekanan visual, tidak monoton).
 Kanvas kali ini berukuran ${EXPORT_WIDTH}x${EXPORT_HEIGHT}px. Sesuaikan ukuran font, padding, dan jumlah/ukuran dekorasi dengan proporsi kanvas ini (kanvas ${ratioLabel === '1:1 (persegi)' ? 'lebih pendek dari versi vertikal, jadi hindari memaksakan terlalu banyak blok teks berukuran besar agar tidak overflow' : 'cukup tinggi untuk hierarki teks yang lebih leluasa'}).
-Anda akan menerima teks konten mentah untuk SATU slide (bisa berisi teks Arab dan/atau Latin, bisa campuran).
-Tugas Anda HANYA mengembalikan SATU objek JSON valid (tanpa markdown code fence, tanpa penjelasan tambahan, tanpa teks lain apapun di luar JSON) dengan struktur PERSIS sebagai berikut:
+${isBatch
+  ? `MODE BATCH: Anda akan menerima ${batchCount} slide SEKALIGUS dalam satu pesan, masing-masing dipisah baris "--- SLIDE N ---" beserta catatan instruksi khusus slide itu (text_align, warna, dsb). Tugas Anda mengembalikan SATU objek JSON dengan struktur {"designs": [ <desain slide 1>, <desain slide 2>, ... ]} — array "designs" HARUS berisi TEPAT ${batchCount} objek desain (skema tiap objek persis seperti didefinisikan di bawah), urutannya HARUS SAMA dengan urutan SLIDE 1, SLIDE 2, dst yang diberikan. Ikuti catatan instruksi masing-masing slide dengan teliti (tiap slide bisa punya text_align/aturan warna berbeda).`
+  : `Anda akan menerima teks konten mentah untuk SATU slide (bisa berisi teks Arab dan/atau Latin, bisa campuran).`}
+Tugas Anda HANYA mengembalikan ${isBatch ? 'objek JSON pembungkus "designs" di atas' : 'SATU objek JSON'} valid (tanpa markdown code fence, tanpa penjelasan tambahan, tanpa teks lain apapun di luar JSON)${isBatch ? ', di mana TIAP OBJEK DI DALAM ARRAY "designs" mengikuti' : ' dengan'} struktur PERSIS sebagai berikut:
 
 {
   "background_color": "#RRGGBB",
@@ -702,22 +908,23 @@ Tugas Anda HANYA mengembalikan SATU objek JSON valid (tanpa markdown code fence,
 Jika ingin memakai gradient, isi "background_gradient" dengan objek {"from":"#hex","to":"#hex","direction":"to bottom"} dan "background_color" tetap diisi warna solid fallback.
 
 Aturan wajib untuk "content_blocks" (INI KUNCI UTAMA agar desain terasa modern, jangan dilewati):
-1. WAJIB memecah teks asli slide menjadi BEBERAPA blok terpisah (minimal 2 blok jika teks cukup panjang, boleh 1 blok jika teks sangat pendek seperti satu kata). JANGAN mengubah, menambah, atau menghilangkan kata dari teks asli — hanya memecahnya per kalimat/frasa/kata kunci. Gabungan seluruh "text" di semua blok harus tetap merepresentasikan teks asli secara utuh dan berurutan.
-2. "role" salah satu dari "heading" (judul/kata kunci paling penting, font besar 56-80px, font_weight bold), "subheading" (poin penting kedua, 36-48px, bold/semibold), "body" (isi/penjelasan, 26-36px, normal), atau "caption" (catatan kecil/sumber/tambahan, 18-24px, normal).
+1. WAJIB memecah teks asli slide menjadi BEBERAPA blok terpisah (minimal 2 blok jika teks cukup panjang, boleh 1 blok jika teks sangat pendek seperti satu kata). JANGAN mengubah, menambah, atau menghilangkan kata dari teks asli — hanya memecahnya per kalimat/frasa/kata kunci. Gabungan seluruh "text" di semua blok harus tetap merepresentasikan teks asli secara utuh dan berurutan. PENTING: kalau teks asli mengandung penanda seperti "**kata**", "*kata*", "__kata__", "~~kata~~", "^kata^", atau baris berawalan "- " / "1. " — itu PENANDA FORMAT (bold/italic/underline/coret/superskrip/list) yang diproses terpisah oleh sistem kami, BUKAN typo. WAJIB pertahankan penanda itu PERSIS apa adanya di dalam "text", jangan dihapus/diubah/dirapikan.
+2. "role" salah satu dari "heading" (judul/kata kunci paling penting -- ukuran font DIKUNCI 45px, bold), "subheading" (poin penting kedua, 36-48px, bold/semibold), "body" (isi/penjelasan -- ukuran font DIKUNCI 35px, normal), atau "caption" (catatan kecil/sumber/tambahan, 18-24px, normal). Catatan: ukuran font_size_px yang kamu isi untuk role "heading"/"body" akan DIABAIKAN dan diganti paksa 45px/35px oleh sistem (termasuk baris berisi huruf Arab, yang selalu dikunci 45px & TIDAK PERNAH bold apa pun role-nya) -- jadi untuk role tsb isi angka berapa pun, cukup fokus ke pemilihan role & susunan kalimat yang tepat.
 3. Untuk teks yang panjang (lebih dari satu kalimat), SELALU coba temukan 1 kata atau frasa pendek yang paling penting untuk dijadikan blok "heading" tersendiri agar ada hierarki visual — penekanan ini WAJIB dilakukan lewat ukuran font & ketebalan (font_size_px & font_weight berbeda per role), JANGAN jadikan semua teks dalam satu blok "body" datar dengan ukuran seragam.
 4. "icon": isi dengan SATU emoji yang relevan secara makna sebagai ilustrasi sederhana pendamping teks (opsional, gunakan pada maksimal 1-2 blok yang paling cocok, isi null jika tidak relevan). Jangan paksakan emoji jika tidak ada yang benar-benar relevan.
 5. Urutan array "content_blocks" merepresentasikan urutan tampil dari atas ke bawah (atau kanan ke kiri urutan logis jika is_rtl true).
 6. Kalau di teks asli ada baris yang PERSIS berisi token "[SPASI]" atau "[SPASI:angka]" (contoh: "[SPASI:300]") — ini BUKAN bagian dari kalimat, JANGAN dianggap teks biasa dan JANGAN ditampilkan sebagai teks. Ubah jadi SATU content_block khusus dengan format: {"text": "", "role": "spacer", "spacer_height_px": angka_dari_token_atau_200_jika_tidak_ada_angka, "font_size_px": 0, "font_weight": "normal", "color": null, "icon": null}. Blok ini akan dirender sebagai ruang kosong vertikal (biasanya dipakai user untuk menempel gambar sendiri secara manual di luar aplikasi, misalnya lewat Canva). Pertahankan posisi token ini persis sesuai urutan aslinya di antara blok-blok teks lain, jangan dipindah-pindah.
+6b. Kalau di teks asli ada baris yang PERSIS berisi token "[GAMBAR:tengah:angka]" (contoh: "[GAMBAR:tengah:40]") — ini BUKAN bagian dari kalimat, JANGAN ditampilkan sebagai teks. Ubah jadi SATU content_block khusus dengan format: {"text": "", "role": "image-slot", "size_pct": angka_dari_token, "font_size_px": 0, "font_weight": "normal", "color": null, "icon": null}. "size_pct" adalah angka PERSIS dari token (bukan piksel). Ini menandai TEMPAT gambar akan disisipkan di antara blok teks lain (pola umum: Judul → gambar → Keterangan). Pertahankan posisi token ini persis sesuai urutan aslinya, jangan dipindah — dan JANGAN isi "content_image_placement" untuk kasus ini (biarkan null), karena penempatannya sudah diwakili lewat posisi blok ini di "content_blocks".
 
 Aturan wajib untuk "color" (warna teks per-blok, dipakai untuk penekanan kata/frasa kunci):
 ${allowColorEmphasis
   ? `7. WAJIB pakai warna "${variationColorHex}" (persis, jangan diganti/dimodifikasi) untuk field "color" pada 1-3 blok berisi kata/frasa kunci paling penting di slide ini, supaya kata kunci itu langsung menarik perhatian mata dan warnanya KONSISTEN sama di semua slide. Isi null untuk blok yang memakai warna teks default (text_color). JANGAN mewarnai semua blok — cukup 1-3 blok paling penting saja, sisanya null. Kalau "${variationColorHex}" ternyata kurang kontras/susah dibaca di atas background_color slide ini, sesuaikan background_color/text_color slide ini (bukan warna variasinya) supaya kombinasinya tetap enak dibaca.`
   : `7. WAJIB isi "color": null untuk SEMUA blok tanpa terkecuali — TIDAK BOLEH ada variasi warna teks sama sekali di slide ini. Penekanan kata/frasa kunci HANYA boleh lewat font_size_px yang lebih besar dan/atau font_weight "bold", BUKAN lewat warna.`}
 
-Aturan wajib untuk "content_image_placement":
-8. Field ini HANYA diisi (bukan null) jika pesan user secara eksplisit menyebutkan ada GAMBAR KONTEN yang dilampirkan untuk slide ini (biasanya muncul di pesan revisi lanjutan, bukan di generate awal). Jika tidak ada gambar konten yang disebutkan, WAJIB isi null.
-9. Jika diisi, formatnya: {"position": "top"|"bottom"|"left"|"right", "size_pct": number (25-55)} — "position" adalah sisi kanvas mana yang dipakai untuk gambar (pertimbangkan orientasi gambar: gambar landscape/lebar lebih cocok "top"/"bottom", gambar potret/tinggi lebih cocok "left"/"right"), dan "size_pct" adalah persentase luas kanvas yang dipakai gambar.
-10. Kalau "content_image_placement" diisi, WAJIB sesuaikan "padding_px", "vertical_position", dan susunan "content_blocks" supaya teks tidak bertumpuk dengan area yang direservasi untuk gambar tersebut (mis. kalau gambar di "bottom" dengan size_pct 40, taruh vertical_position "top" dan pastikan teks muat di 60% area atas).
+Aturan wajib untuk "content_image_placement" (HANYA untuk gambar di tepi: bawah/kiri/kanan — BUKAN untuk posisi "tengah", lihat aturan 6b di atas):
+8. Field ini HANYA diisi (bukan null) jika pesan user secara eksplisit menyebutkan ada GAMBAR KONTEN/frame gambar di tepi (bottom/left/right) untuk slide ini. Kalau frame gambarnya posisi "tengah" (lihat aturan 6b), field ini WAJIB null. Kalau tidak ada frame gambar sama sekali, WAJIB null juga.
+9. Kalau diisi, formatnya: {"position": "bottom"|"left"|"right", "size_pct": angka_dari_catatan_user} — nilai "position" dan "size_pct" WAJIB SAMA PERSIS dengan yang disebutkan di catatan, jangan diubah/ditebak sendiri (posisi & ukurannya sudah dikunci lewat kode, bukan keputusan Anda).
+10. Padding/vertical_position tetap sesuaikan supaya nyaman, tapi tidak perlu khawatir berlebihan soal tumpang tindih dengan gambar — itu sudah dijamin lewat kode terpisah.
 11. Gambar konten ini BUKAN untuk dianalisis warnanya dan BUKAN untuk mempengaruhi palet warna slide — ini beda dengan gambar sampel gaya (kalau ada) yang memang dipakai untuk analisis warna. Jangan campur adukkan dua hal ini.
 
 Aturan wajib lainnya:
@@ -764,7 +971,7 @@ Aturan wajib lainnya:
     return /overload|quota|rate.?limit|429|503|resource_exhausted|too many requests|capacity/.test(msg);
   }
 
-  async function callGemini(providerObj, contents, allowColorEmphasis){
+  async function callGemini(providerObj, contents, allowColorEmphasis, batchCount){
     const apiKey = providerObj.apiKey.trim();
     const model = providerObj.model || PROVIDER_DEFS.gemini.defaultModel;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -773,11 +980,11 @@ Aturan wajib lainnya:
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: contents,
-        systemInstruction: { parts: [{ text: buildSystemPrompt(allowColorEmphasis) }] },
+        systemInstruction: { parts: [{ text: buildSystemPrompt(allowColorEmphasis, batchCount) }] },
         generationConfig: {
           temperature: 0.85,
           responseMimeType: 'application/json',
-          maxOutputTokens: 8192,
+          maxOutputTokens: batchCount ? Math.min(8192 * batchCount, 32768) : 8192,
           thinkingConfig: { thinkingLevel: 'low' }
         }
       })
@@ -812,12 +1019,12 @@ Aturan wajib lainnya:
 
   // Converts canonical Gemini-style contents ({role, parts:[{text}|{inline_data}]}) ke format
   // OpenAI-compatible "messages" (dipakai Groq & OpenRouter).
-  function callOpenAICompatible(providerObj, contents, allowColorEmphasis){
+  function callOpenAICompatible(providerObj, contents, allowColorEmphasis, batchCount){
     const apiKey = providerObj.apiKey.trim();
     const model = providerObj.model || PROVIDER_DEFS[providerObj.provider].defaultModel;
     const baseUrl = OPENAI_COMPAT_BASE_URL[providerObj.provider];
 
-    const messages = [{ role: 'system', content: buildSystemPrompt(allowColorEmphasis) }];
+    const messages = [{ role: 'system', content: buildSystemPrompt(allowColorEmphasis, batchCount) }];
     contents.forEach(entry => {
       const role = entry.role === 'model' ? 'assistant' : 'user';
       const blocks = entry.parts.map(part => {
@@ -842,7 +1049,7 @@ Aturan wajib lainnya:
         model: model,
         messages: messages,
         temperature: 0.85,
-        max_tokens: 8192,
+        max_tokens: batchCount ? Math.min(8192 * batchCount, 32768) : 8192,
         response_format: { type: 'json_object' }
       })
     }).then(async response => {
@@ -868,18 +1075,19 @@ Aturan wajib lainnya:
     });
   }
 
-  async function callProvider(providerObj, contents, allowColorEmphasis){
+  async function callProvider(providerObj, contents, allowColorEmphasis, batchCount){
     if (!providerObj.apiKey.trim()) throw new Error('API Key belum diisi.');
     if (providerObj.provider === 'gemini'){
-      return await callGemini(providerObj, contents, allowColorEmphasis);
+      return await callGemini(providerObj, contents, allowColorEmphasis, batchCount);
     }
-    return await callOpenAICompatible(providerObj, contents, allowColorEmphasis);
+    return await callOpenAICompatible(providerObj, contents, allowColorEmphasis, batchCount);
   }
 
   // Coba tiap provider sesuai urutan prioritas di UI. Kalau providernya overload/kuota habis,
   // otomatis lanjut ke provider berikutnya yang key-nya terisi. Kalau errornya bukan soal
   // overload/kuota (mis. API key salah), langsung berhenti dan laporkan.
-  async function callAIWithFallback(contents, allowColorEmphasis){
+  // batchCount: kalau diisi (>1), berarti mode "Generate Sekaligus" -- 1 request buat banyak slide.
+  async function callAIWithFallback(contents, allowColorEmphasis, batchCount){
     const active = providers.filter(p => p.apiKey.trim().length > 0);
     if (active.length === 0){
       throw new Error('Mohon isi minimal satu API key provider AI di sidebar.');
@@ -889,7 +1097,7 @@ Aturan wajib lainnya:
       const p = active[i];
       const label = PROVIDER_DEFS[p.provider].label;
       try {
-        return await callProvider(p, contents, allowColorEmphasis);
+        return await callProvider(p, contents, allowColorEmphasis, batchCount);
       } catch(err){
         attempts.push(`${label}: ${err.message}`);
         const isLast = i === active.length - 1;
@@ -917,17 +1125,35 @@ Aturan wajib lainnya:
   async function generateDesignForSlide(rawText, isRtlHint, slideIndex){
     const targetAlign = resolveTextAlign(slideIndex);
     const alignNote = `\n\nCatatan tata letak: "text_align" untuk slide ini WAJIB "${targetAlign}" (rata ${ALIGN_LABEL_ID[targetAlign]}). Susun komposisi teks, ikon, dan dekorasi supaya cocok dengan perataan ini.`;
-    const extra = (isRtlHint ? '\n\nCatatan: teks ini terdeteksi mengandung karakter Arab.' : '') + alignNote;
+    let extra = (isRtlHint ? '\n\nCatatan: teks ini terdeteksi mengandung karakter Arab.' : '') + alignNote;
+
+    const frame = slides[slideIndex] && slides[slideIndex].imageFrame;
+    if (frame && frame.position !== 'center'){
+      extra += `\n\nCatatan gambar: slide ini AKAN menampilkan gambar konten (mungkin belum diupload user sekarang, area-nya tetap harus disiapkan) di posisi tepi "${frame.position}" seluas ${frame.size_pct}% kanvas. WAJIB isi "content_image_placement" persis {"position":"${frame.position}","size_pct":${frame.size_pct}}.`;
+    } else if (frame && frame.position === 'center'){
+      extra += `\n\nCatatan gambar: teks slide ini mengandung token literal "[GAMBAR:tengah:${frame.size_pct}]" di suatu posisi -- ikuti aturan 6b di instruksi sistem (ubah jadi content_block role "image-slot", JANGAN isi content_image_placement untuk kasus ini).`;
+    }
+
     const contents = [
       { role: 'user', parts: buildUserMessageParts(rawText, extra) }
     ];
     const design = await callAIWithFallback(contents, isColorEmphasisAllowed(slideIndex));
     design.text_align = targetAlign; // paksa override -> jaminan 100% akurat, tidak bergantung kepatuhan AI
+    if (slides[slideIndex] && slides[slideIndex].hasSpacer){
+      design.vertical_position = 'center'; // paksa center supaya teks+ruang kosong tetap di tengah kanvas
+    }
+    if (frame && frame.position !== 'center'){
+      design.content_image_placement = frame; // paksa override -> posisi gambar dari token, bukan tebakan AI
+    }
+    if (slides[slideIndex] && slides[slideIndex].hasStructureTags){
+      design.content_blocks = slides[slideIndex].tagBlocks; // paksa override -> struktur dari [JUDUL]/[ISI], bukan tebakan AI
+    }
     return design;
   }
 
   async function reviseDesignForSlide(rawText, previousDesign, instruction, contentImageDataUrl, slideIndex){
     const targetAlign = resolveTextAlign(slideIndex);
+    const frame = slides[slideIndex] && slides[slideIndex].imageFrame;
     const revisionParts = [];
     let instructionText = instruction && instruction.trim()
       ? `Tolong revisi desain JSON di atas sesuai instruksi berikut, lalu kembalikan LAGI objek JSON LENGKAP dengan struktur yang sama (jangan hanya kirim bagian yang berubah):\n\nInstruksi revisi: "${instruction}"`
@@ -935,14 +1161,19 @@ Aturan wajib lainnya:
 
     instructionText += `\n\nCatatan tata letak: "text_align" untuk slide ini WAJIB tetap "${targetAlign}" (rata ${ALIGN_LABEL_ID[targetAlign]}).`;
 
-    if (contentImageDataUrl){
+    if (frame && frame.position !== 'center'){
+      instructionText += `\n\nCatatan gambar: slide ini punya frame gambar TETAP di posisi tepi "${frame.position}" seluas ${frame.size_pct}% kanvas (sudah dikunci lewat kode, tidak bisa diubah lewat revisi ini). WAJIB isi "content_image_placement" persis {"position":"${frame.position}","size_pct":${frame.size_pct}}.`;
+    } else if (frame && frame.position === 'center'){
+      instructionText += `\n\nCatatan gambar: teks slide ini mengandung token literal "[GAMBAR:tengah:${frame.size_pct}]" -- ikuti aturan 6b di instruksi sistem (content_block role "image-slot", JANGAN isi content_image_placement).`;
+    } else if (contentImageDataUrl){
       const match = contentImageDataUrl.match(/^data:(.+?);base64,(.+)$/);
-      instructionText += `\n\nCATATAN PENTING: slide ini SEKARANG akan menampilkan sebuah gambar KONTEN yang disediakan user (misalnya diagram/foto penjelas, BUKAN sekadar dekorasi, dan BUKAN untuk dianalisis warnanya). Lihat gambar terlampir untuk membantu menentukan tata letak terbaik, lalu isi field "content_image_placement" pada JSON (lihat definisi field ini di instruksi sistem) dan susun ulang "content_blocks" serta "padding_px"/"vertical_position" supaya teks TIDAK bertumpuk dengan area gambar tersebut.`;
+      instructionText += `\n\nCATATAN PENTING: slide ini SEKARANG akan menampilkan sebuah gambar KONTEN yang disediakan user (misalnya diagram/foto penjelas, BUKAN sekadar dekorasi, dan BUKAN untuk dianalisis warnanya). Lihat gambar terlampir untuk membantu menentukan tata letak terbaik, lalu isi field "content_image_placement" pada JSON (lihat definisi field ini di instruksi sistem, HANYA "bottom"/"left"/"right") dan susun ulang "content_blocks" serta "padding_px"/"vertical_position" supaya teks TIDAK bertumpuk dengan area gambar tersebut.`;
       revisionParts.push({ text: instructionText });
       if (match){
         revisionParts.push({ inline_data: { mime_type: match[1], data: match[2] } });
       }
-    } else {
+    }
+    if (revisionParts.length === 0){
       revisionParts.push({ text: instructionText });
     }
 
@@ -953,6 +1184,15 @@ Aturan wajib lainnya:
     ];
     const design = await callAIWithFallback(contents, isColorEmphasisAllowed(slideIndex));
     design.text_align = targetAlign; // paksa override -> jaminan 100% akurat, tidak bergantung kepatuhan AI
+    if (slides[slideIndex] && slides[slideIndex].hasSpacer){
+      design.vertical_position = 'center'; // paksa center supaya teks+ruang kosong tetap di tengah kanvas
+    }
+    if (frame && frame.position !== 'center'){
+      design.content_image_placement = frame; // paksa override -> posisi gambar dari token, bukan tebakan AI
+    }
+    if (slides[slideIndex] && slides[slideIndex].hasStructureTags){
+      design.content_blocks = slides[slideIndex].tagBlocks; // paksa override -> struktur dari [JUDUL]/[ISI], bukan tebakan AI
+    }
     return design;
   }
 
@@ -964,8 +1204,9 @@ Aturan wajib lainnya:
     canvas.style.position = 'relative';
     canvas.style.overflow = 'hidden';
     canvas.style.boxSizing = 'border-box';
-    canvas.style.fontFamily = "'Tajawal', 'Calibri', sans-serif";
-    canvas.dir = design.is_rtl ? 'rtl' : 'ltr';
+    canvas.style.fontFamily = "'Calibri', sans-serif";
+    canvas.dir = 'ltr'; // netral -- arah RTL/LTR ditentukan per-blok teks di bawah, bukan level kanvas
+                         // (supaya elemen UI seperti watermark/dots tidak ikut kebalik kalau ADA blok Arab)
 
     if (design.background_gradient && design.background_gradient.from && design.background_gradient.to){
       const dir = design.background_gradient.direction || 'to bottom';
@@ -990,40 +1231,164 @@ Aturan wajib lainnya:
       canvas.appendChild(el);
     });
 
-    // ---- gambar konten (user-provided, mis. diagram makhraj huruf) ----
-    if (contentImageDataUrl){
-      const placement = design.content_image_placement || { position: 'bottom', size_pct: 35 };
-      const sizePct = placement.size_pct || 35;
-      const imgEl = document.createElement('img');
-      imgEl.src = contentImageDataUrl;
-      imgEl.style.position = 'absolute';
-      imgEl.style.objectFit = 'contain';
-      imgEl.style.borderRadius = '12px';
+    // ---- watermark (nama akun) + pagination: hitung dulu posisi & jangkauannya,
+    // SEBELUM safe-zone dibuat -- supaya margin atas/bawah safe-zone bisa mengikuti
+    // jangkauan ASLI elemen ini (bukan angka tetap yang kebetulan aman).
+    const wmConfig = getWatermarkConfig();
+    const hasWatermarkContent = wmConfig.mode !== 'dot' || wmConfig.name;
+    const wmPosition = watermarkPositionSelect.value || 'top-left'; // top-left|top-center|top-right|bottom-left|bottom-center|bottom-right
+    const [wmVSide, wmHSide] = wmPosition.split('-');
+    const EDGE = 48;
+    const WM_RESERVE = 64; // ruang tambahan yang direservasi kalau watermark & dots/arrow berada di sisi bawah yang sama
+    const WM_APPROX_HEIGHT = 38; // taksiran tinggi baris watermark (font 32px + sedikit leading)
+    const DOT_APPROX_HEIGHT = 34;
+    const ARROW_SIZE = 64;
 
-      if (placement.position === 'top'){
-        imgEl.style.top = '0'; imgEl.style.left = '0'; imgEl.style.right = '0';
-        imgEl.style.width = '100%'; imgEl.style.height = sizePct + '%';
-      } else if (placement.position === 'left'){
-        imgEl.style.top = '0'; imgEl.style.bottom = '0'; imgEl.style.left = '0';
-        imgEl.style.height = '100%'; imgEl.style.width = sizePct + '%';
-      } else if (placement.position === 'right'){
-        imgEl.style.top = '0'; imgEl.style.bottom = '0'; imgEl.style.right = '0';
-        imgEl.style.height = '100%'; imgEl.style.width = sizePct + '%';
-      } else { // bottom (default)
-        imgEl.style.bottom = '0'; imgEl.style.left = '0'; imgEl.style.right = '0';
-        imgEl.style.width = '100%'; imgEl.style.height = sizePct + '%';
-      }
-      canvas.appendChild(imgEl);
+    let dotsBottomOffset = EDGE;
+    let arrowBottomOffset = 40;
+    if (hasWatermarkContent && wmVSide === 'bottom'){
+      if (wmHSide === 'center') dotsBottomOffset = EDGE + WM_RESERVE;
+      if (wmHSide === 'right') arrowBottomOffset = 40 + WM_RESERVE;
     }
 
-    // ---- text container ----
+    const hasDots = totalSlides && totalSlides > 1;
+    const hasArrow = hasDots && slideIndex < totalSlides - 1;
+
+    // jangkauan (dari tepi kanvas) elemen UI bawah -- dipakai buat batas bawah safe-zone
+    let bottomChromeExtent = 0;
+    if (hasDots) bottomChromeExtent = Math.max(bottomChromeExtent, dotsBottomOffset + DOT_APPROX_HEIGHT);
+    if (hasArrow) bottomChromeExtent = Math.max(bottomChromeExtent, arrowBottomOffset + ARROW_SIZE);
+    if (hasWatermarkContent && wmVSide === 'bottom') bottomChromeExtent = Math.max(bottomChromeExtent, EDGE + WM_APPROX_HEIGHT);
+
+    // jangkauan elemen UI atas (cuma watermark yang mungkin ada di atas)
+    let topChromeExtent = 0;
+    if (hasWatermarkContent && wmVSide === 'top') topChromeExtent = 44 + WM_APPROX_HEIGHT;
+
+    // ---- SAFE ZONE: area konten (teks + gambar) selalu punya margin dari SEMUA sisi kanvas.
+    // Atas & bawah: persis "1 enter" DI LUAR jangkauan watermark/dots/panah yang sesungguhnya
+    // (bukan angka tetap kebetulan aman) -- supaya gambar/teks TIDAK PERNAH menutupi elemen itu.
+    // Kiri & kanan: tetap "1 tab" flat dari tepi (belum ada elemen UI horizontal yang perlu dikejar).
+    const enterUnit = EXPORT_HEIGHT * 0.10;
+    const tabUnit = EXPORT_WIDTH * 0.10;
+    const marginTop = topChromeExtent + enterUnit;
+    const marginBottom = bottomChromeExtent + enterUnit;
+    const marginX = tabUnit;
+    const safeWidth = EXPORT_WIDTH - marginX * 2;
+    const safeHeight = EXPORT_HEIGHT - marginTop - marginBottom;
+
+    const safeZone = document.createElement('div');
+    safeZone.style.position = 'absolute';
+    safeZone.style.top = marginTop + 'px';
+    safeZone.style.bottom = marginBottom + 'px';
+    safeZone.style.left = marginX + 'px';
+    safeZone.style.right = marginX + 'px';
+    canvas.appendChild(safeZone);
+
+    // ---- gambar konten posisi TEPI (bawah/kiri/kanan): prioritaskan frame dari token [GAMBAR]
+    // (deterministik), fallback ke keputusan AI (content_image_placement) kalau upload lewat alur
+    // revisi lama. Posisi "tengah" TIDAK masuk sini -- itu ditangani lewat content_block "image-slot"
+    // di dalam loop blocks di bawah (supaya bisa disisipkan di antara teks, pola Judul-gambar-Keterangan).
+    const tokenFrame = slides[slideIndex] && slides[slideIndex].imageFrame;
+    const edgeFramePlacement = (tokenFrame && tokenFrame.position !== 'center')
+      ? tokenFrame
+      : (design.content_image_placement && design.content_image_placement.position !== 'center' ? design.content_image_placement : null);
+
+    // Helper: render gambar dengan fit manual (html2canvas TIDAK mendukung object-fit dengan benar,
+    // jadi ukuran pas-nya dihitung sendiri dari aspect ratio asli, bukan diserahkan ke CSS).
+    function renderFittedImage(container, containerW, containerH, dataUrl, aspect){
+      const imgEl = document.createElement('img');
+      imgEl.src = dataUrl;
+      imgEl.style.display = 'block';
+      imgEl.style.borderRadius = '12px';
+      imgEl.style.position = 'absolute';
+      if (aspect){
+        const containerAspect = containerW / containerH;
+        let fitW, fitH;
+        if (aspect > containerAspect){ fitW = containerW; fitH = containerW / aspect; }
+        else { fitH = containerH; fitW = containerH * aspect; }
+        imgEl.style.width = fitW + 'px';
+        imgEl.style.height = fitH + 'px';
+        imgEl.style.left = ((containerW - fitW) / 2) + 'px';
+        imgEl.style.top = ((containerH - fitH) / 2) + 'px';
+      } else {
+        // aspect ratio belum siap ke-cache (sesaat sebelum gambar selesai di-load) -> fallback penuh
+        imgEl.style.width = containerW + 'px';
+        imgEl.style.height = containerH + 'px';
+        imgEl.style.left = '0'; imgEl.style.top = '0';
+      }
+      container.appendChild(imgEl);
+    }
+
+    function renderDashedPlaceholder(container){
+      container.style.border = `3px dashed ${design.accent_color || '#6366f1'}`;
+      container.style.borderRadius = '12px';
+      container.style.display = 'flex';
+      container.style.alignItems = 'center';
+      container.style.justifyContent = 'center';
+      container.style.opacity = '0.55';
+      const placeholderLabel = document.createElement('span');
+      placeholderLabel.textContent = '🖼️';
+      placeholderLabel.style.fontSize = '48px';
+      container.appendChild(placeholderLabel);
+    }
+
+    let edgeFrameSizePx = 0; // dipakai buat hitung inset textWrap di bawah
+    if (edgeFramePlacement){
+      const sizePct = edgeFramePlacement.size_pct || 35;
+      const frameBox = document.createElement('div');
+      frameBox.style.position = 'absolute';
+      frameBox.style.boxSizing = 'border-box';
+      frameBox.style.overflow = 'hidden';
+
+      let frameW, frameH;
+      if (edgeFramePlacement.position === 'left'){
+        frameW = safeWidth * sizePct / 100; frameH = safeHeight;
+        frameBox.style.left = '0px'; frameBox.style.top = '0px';
+        edgeFrameSizePx = frameW;
+      } else if (edgeFramePlacement.position === 'right'){
+        frameW = safeWidth * sizePct / 100; frameH = safeHeight;
+        frameBox.style.right = '0px'; frameBox.style.top = '0px';
+        edgeFrameSizePx = frameW;
+      } else { // bottom (default)
+        frameW = safeWidth; frameH = safeHeight * sizePct / 100;
+        frameBox.style.left = '0px'; frameBox.style.bottom = '0px';
+        edgeFrameSizePx = frameH;
+      }
+      frameBox.style.width = frameW + 'px';
+      frameBox.style.height = frameH + 'px';
+
+      // offset hasil sintaks "geser gambar ke ... N enter/tab" (diproses kode, bukan AI)
+      if (design.image_offset_x || design.image_offset_y){
+        frameBox.style.transform = `translate(${design.image_offset_x || 0}px, ${design.image_offset_y || 0}px)`;
+      }
+
+      if (contentImageDataUrl){
+        const aspect = slides[slideIndex] && slides[slideIndex].contentImageAspect;
+        renderFittedImage(frameBox, frameW, frameH, contentImageDataUrl, aspect);
+      } else if (tokenFrame){
+        renderDashedPlaceholder(frameBox);
+      }
+
+      safeZone.appendChild(frameBox);
+    }
+
+    // ---- text container (di dalam safe zone) ----
     const textWrap = document.createElement('div');
     textWrap.dataset.textWrap = 'true';
     textWrap.style.position = 'absolute';
-    textWrap.style.left = '0';
-    textWrap.style.right = '0';
-    textWrap.style.top = '0';
-    textWrap.style.bottom = '0';
+    textWrap.style.left = '0px';
+    textWrap.style.right = '0px';
+    textWrap.style.top = '0px';
+    textWrap.style.bottom = '0px';
+
+    // Paksa lewat kode (bukan tebakan AI) supaya teks TIDAK PERNAH bertumpuk dengan frame gambar,
+    // jaraknya persis "1 enter" (bawah) atau "1 tab" (kiri/kanan) dari tepi frame.
+    if (edgeFramePlacement){
+      if (edgeFramePlacement.position === 'left') textWrap.style.left = (edgeFrameSizePx + tabUnit) + 'px';
+      else if (edgeFramePlacement.position === 'right') textWrap.style.right = (edgeFrameSizePx + tabUnit) + 'px';
+      else textWrap.style.bottom = (edgeFrameSizePx + enterUnit) + 'px';
+    }
+
     textWrap.style.padding = (design.padding_px != null ? design.padding_px : 90) + 'px';
     textWrap.style.boxSizing = 'border-box';
     textWrap.style.display = 'flex';
@@ -1034,6 +1399,11 @@ Aturan wajib lainnya:
 
     const vpos = design.vertical_position || 'center';
     textWrap.style.justifyContent = vpos === 'top' ? 'flex-start' : (vpos === 'bottom' ? 'flex-end' : 'center');
+
+    // offset hasil sintaks "geser teks ke ... N enter/tab" (diproses kode, bukan AI)
+    if (design.text_offset_x || design.text_offset_y){
+      textWrap.style.transform = `translate(${design.text_offset_x || 0}px, ${design.text_offset_y || 0}px)`;
+    }
 
     const blocks = Array.isArray(design.content_blocks) && design.content_blocks.length > 0
       ? design.content_blocks
@@ -1050,71 +1420,138 @@ Aturan wajib lainnya:
         return;
       }
 
-      const blockRow = document.createElement('div');
-      blockRow.style.display = 'flex';
-      blockRow.style.flexDirection = design.is_rtl ? 'row-reverse' : 'row';
-      blockRow.style.alignItems = 'center';
-      blockRow.style.justifyContent = design.text_align === 'left' ? 'flex-start' : (design.text_align === 'right' ? 'flex-end' : 'center');
-      blockRow.style.gap = '14px';
-      blockRow.style.flexWrap = 'wrap';
+      // blok khusus "image-slot" (dari token [GAMBAR:tengah:N]) → render gambar/placeholder DI ANTARA
+      // blok teks lain, pola Judul-gambar-Keterangan, jarak 1 enter ke blok di atas & bawahnya.
+      if (block.role === 'image-slot'){
+        const slotSizePct = block.size_pct || 35;
+        const slotHeightPx = safeHeight * slotSizePct / 100;
+        const slotEl = document.createElement('div');
+        slotEl.style.position = 'relative';
+        slotEl.style.width = '100%';
+        slotEl.style.height = slotHeightPx + 'px';
+        slotEl.style.flexShrink = '0';
+        slotEl.style.marginTop = enterUnit + 'px';
+        slotEl.style.marginBottom = enterUnit + 'px';
+        slotEl.style.boxSizing = 'border-box';
+        slotEl.style.overflow = 'hidden';
 
-      if (block.icon){
-        const iconEl = document.createElement('span');
-        iconEl.style.fontSize = Math.round((block.font_size_px || 36) * 1.15) + 'px';
-        iconEl.style.lineHeight = '1';
-        iconEl.textContent = block.icon;
-        blockRow.appendChild(iconEl);
+        if (contentImageDataUrl){
+          const aspect = slides[slideIndex] && slides[slideIndex].contentImageAspect;
+          // lebar kontainer slot = lebar textWrap saat ini (approx safeWidth dikurangi padding kiri-kanan);
+          // dipakai sebagai batas lebar wajar untuk perhitungan fit manual.
+          renderFittedImage(slotEl, safeWidth, slotHeightPx, contentImageDataUrl, aspect);
+        } else if (tokenFrame){
+          renderDashedPlaceholder(slotEl);
+        }
+        textWrap.appendChild(slotEl);
+        return;
       }
 
-      const textSpan = document.createElement('span');
-      textSpan.textContent = block.text || '';
-      // "color" dipakai buat penekanan kata/frasa kunci (kalau mode-nya diaktifkan) —
-      // ini murni warna teks, TANPA kotak background apapun, jadi tidak ada risiko presisi
-      // seperti kasus highlight-background yang berulang kali meleset di html2canvas.
-      textSpan.style.color = block.color || design.text_color || '#111111';
-      textSpan.style.fontSize = (block.font_size_px || (block.role === 'heading' ? 60 : block.role === 'caption' ? 22 : 36)) + 'px';
+      // Deteksi Arab PER-BARIS (bukan per-blok) -- AI kadang menggabungkan baris Arab + terjemahan
+      // Latin jadi satu blok, jadi kalau cuma dicek di level blok, baris Latin di dalamnya ikut
+      // kena RTL. Pecah dulu berdasarkan baris baru, render tiap baris dengan arahnya sendiri.
+      const lines = (block.text || '').split('\n');
 
-      // Tajawal cuma rapi buat teks Arab di weight Light/Regular/Medium (300-500) —
-      // weight Bold/ExtraBold (700/800) bikin sambungan huruf Arab jadi rapat & susah dibaca.
-      // Jadi kalau blok ini mengandung huruf Arab, weight-nya dipaksa maksimal 500 (Medium).
-      let resolvedWeight = block.font_weight || (block.role === 'heading' || block.role === 'subheading' ? 'bold' : 'normal');
-      const isBoldish = resolvedWeight === 'bold' || resolvedWeight === 700 || resolvedWeight === '700' || resolvedWeight === 800 || resolvedWeight === '800';
-      if (containsArabic(block.text || '') && isBoldish){
-        resolvedWeight = '500';
-      }
-      textSpan.style.fontWeight = resolvedWeight;
+      lines.forEach((lineText, lineIdx) => {
+        if (lineText.trim() === '' && lines.length > 1) return; // skip baris kosong hasil split
 
-      textSpan.style.lineHeight = design.line_height || 1.4;
-      textSpan.style.whiteSpace = 'pre-wrap';
-      textSpan.style.wordBreak = 'break-word';
-      textSpan.style.fontFamily = "'Tajawal', 'Calibri', sans-serif";
+        // deteksi list marker ("- item" / "1. item") di baris ini
+        const listInfo = extractListMarker(lineText);
+        const contentText = listInfo ? listInfo.content : lineText;
+        const lineIsArabic = containsArabic(contentText);
+        const blockRow = document.createElement('div');
+        blockRow.style.display = 'flex';
+        blockRow.style.flexDirection = lineIsArabic ? 'row-reverse' : 'row';
+        blockRow.style.alignItems = 'center';
+        blockRow.style.justifyContent = design.text_align === 'left' ? 'flex-start' : (design.text_align === 'right' ? 'flex-end' : 'center');
+        blockRow.style.gap = '14px';
+        blockRow.style.flexWrap = 'wrap';
 
-      blockRow.appendChild(textSpan);
-      textWrap.appendChild(blockRow);
+        if (block.icon && lineIdx === 0){
+          const iconEl = document.createElement('span');
+          iconEl.style.fontSize = Math.round((block.font_size_px || 36) * 1.15) + 'px';
+          iconEl.style.lineHeight = '1';
+          iconEl.textContent = block.icon;
+          blockRow.appendChild(iconEl);
+        }
+
+        // Ukuran font ditentukan TETAP (bukan rentang bebas dari AI): Judul=45px, Teks biasa=35px,
+        // baris Arab SELALU 45px berapa pun role-nya. subheading/caption tetap fleksibel.
+        let resolvedFontSize;
+        if (lineIsArabic){
+          resolvedFontSize = 45;
+        } else if (block.role === 'heading'){
+          resolvedFontSize = 45;
+        } else if (block.role === 'subheading'){
+          resolvedFontSize = block.font_size_px || 42;
+        } else if (block.role === 'caption'){
+          resolvedFontSize = block.font_size_px || 22;
+        } else { // body / default
+          resolvedFontSize = 35;
+        }
+
+        // Teks Arab TIDAK BOLEH bold maupun italic apa pun role-nya (permintaan eksplisit).
+        let resolvedWeight = block.font_weight || (block.role === 'heading' || block.role === 'subheading' ? 'bold' : 'normal');
+        if (lineIsArabic) resolvedWeight = 'normal';
+
+        if (listInfo){
+          const markerEl = document.createElement('span');
+          if (listInfo.type === 'bullet'){
+            const BULLET_GLYPHS = { dot: '•', square: '▪', check: '✓', cross: '✗', arrow: '➤' };
+            markerEl.textContent = BULLET_GLYPHS[listInfo.style] || '•';
+          } else {
+            markerEl.textContent = listInfo.label + '.';
+          }
+          markerEl.style.fontWeight = 'bold';
+          markerEl.style.fontSize = resolvedFontSize + 'px';
+          markerEl.style.flexShrink = '0';
+          markerEl.style.fontFamily = "'Calibri', sans-serif";
+          markerEl.style.color = design.text_color || '#111111';
+          blockRow.appendChild(markerEl);
+        }
+
+        // lineWrap membungkus semua segmen (bold/italic/underline/strike/superscript) 1 baris ini
+        const lineWrap = document.createElement('span');
+        lineWrap.dir = lineIsArabic ? 'rtl' : 'ltr'; // arah per-baris, bukan ikut is_rtl satu slide/blok penuh
+        lineWrap.style.fontSize = resolvedFontSize + 'px';
+        lineWrap.style.lineHeight = design.line_height || 1.4;
+        lineWrap.style.whiteSpace = 'pre-wrap';
+        lineWrap.style.wordBreak = 'break-word';
+        lineWrap.style.fontFamily = "'Calibri', sans-serif";
+
+        const segments = parseInlineFormatting(contentText);
+        segments.forEach(seg => {
+          const segSpan = document.createElement('span');
+          segSpan.textContent = seg.text;
+          // "color" dipakai buat penekanan kata/frasa kunci (kalau mode-nya diaktifkan) —
+          // ini murni warna teks, TANPA kotak background apapun, jadi tidak ada risiko presisi
+          // seperti kasus highlight-background yang berulang kali meleset di html2canvas.
+          segSpan.style.color = block.color || design.text_color || '#111111';
+          segSpan.style.fontWeight = lineIsArabic ? 'normal' : (seg.bold ? 'bold' : resolvedWeight);
+          segSpan.style.fontStyle = (!lineIsArabic && seg.italic) ? 'italic' : 'normal'; // Arab tidak pernah italic
+          let decoration = [];
+          if (seg.underline) decoration.push('underline');
+          if (seg.strike) decoration.push('line-through');
+          segSpan.style.textDecoration = decoration.length ? decoration.join(' ') : 'none';
+          if (seg.sup){
+            segSpan.style.verticalAlign = 'super';
+            segSpan.style.fontSize = '0.7em';
+          }
+          lineWrap.appendChild(segSpan);
+        });
+
+        blockRow.appendChild(lineWrap);
+        textWrap.appendChild(blockRow);
+      });
     });
 
-    canvas.appendChild(textWrap);
-
-    // ---- watermark (nama akun) + pagination: hitung dulu supaya tidak saling tabrakan ----
-    const wmConfig = getWatermarkConfig();
-    const hasWatermarkContent = wmConfig.mode !== 'dot' || wmConfig.name;
-    const wmPosition = watermarkPositionSelect.value || 'top-left'; // top-left|top-center|top-right|bottom-left|bottom-center|bottom-right
-    const [wmVSide, wmHSide] = wmPosition.split('-');
-    const EDGE = 48;
-    const WM_RESERVE = 64; // ruang tambahan yang direservasi kalau watermark & dots/arrow berada di sisi bawah yang sama
-
-    let dotsBottomOffset = EDGE;
-    let arrowBottomOffset = 40;
-    if (hasWatermarkContent && wmVSide === 'bottom'){
-      if (wmHSide === 'center') dotsBottomOffset = EDGE + WM_RESERVE;
-      if (wmHSide === 'right') arrowBottomOffset = 40 + WM_RESERVE;
-    }
+    safeZone.appendChild(textWrap);
 
     // ---- watermark ----
     if (hasWatermarkContent){
       const wm = buildWatermarkNode(wmConfig, design.text_color || '#111111', design.accent_color || '#6366f1');
       wm.style.position = 'absolute';
-      wm.style.fontFamily = "'Tajawal', 'Calibri', sans-serif";
+      wm.style.fontFamily = "'Calibri', sans-serif";
       wm.style.fontSize = '32px';
       wm.style.fontWeight = '700';
       wm.style.letterSpacing = '0.5px';
@@ -1128,7 +1565,7 @@ Aturan wajib lainnya:
       else if (wmHSide === 'right'){ wm.style.right = '48px'; wm.style.left = 'auto'; }
       else { wm.style.left = '50%'; wm.style.right = 'auto'; wm.style.transform = 'translateX(-50%)'; }
 
-      canvas.appendChild(wm);
+      wm.dir = 'ltr'; canvas.appendChild(wm);
     }
 
     // ---- pagination dots + arrow ----
@@ -1154,7 +1591,7 @@ Aturan wajib lainnya:
         dot.style.width = isActive ? '34px' : '14px';
         dotsWrap.appendChild(dot);
       }
-      canvas.appendChild(dotsWrap);
+      dotsWrap.dir = 'ltr'; canvas.appendChild(dotsWrap);
 
       if (slideIndex < totalSlides - 1){
         const arrowBadge = document.createElement('div');
@@ -1175,7 +1612,7 @@ Aturan wajib lainnya:
           <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>`;
 
-        canvas.appendChild(arrowBadge);
+        arrowBadge.dir = 'ltr'; canvas.appendChild(arrowBadge);
       }
     }
 
@@ -1221,6 +1658,35 @@ Aturan wajib lainnya:
           <span>Gambar terlampir untuk slide ini</span>
           <button id="content-image-remove-${index}" type="button" class="text-red-500 hover:underline">Hapus</button>
         </div>
+        <p class="text-[10px] text-slate-400">Tip instruksi: ketik <code class="bg-slate-100 px-1 rounded">geser teks ke atas 2 enter</code> atau <code class="bg-slate-100 px-1 rounded">geser gambar ke kanan 3 tab</code> buat geser posisi TANPA panggil AI (gratis). 1 layar = 10 enter (vertikal) / 10 tab (horizontal).</p>
+
+        <details class="w-full border border-slate-200 rounded-lg">
+          <summary class="cursor-pointer text-xs font-semibold text-slate-600 px-3 py-2 select-none">✏️ Edit Lanjutan Slide Ini</summary>
+          <div class="p-3 pt-1 flex flex-col gap-2 border-t border-slate-100">
+            <div>
+              <label class="text-xs text-slate-500 block mb-1">Edit Teks Konten Slide Ini</label>
+              <div id="fmt-toolbar-edit-${index}" class="flex flex-wrap gap-1 mb-1"></div>
+              <textarea id="edit-text-${index}" rows="3" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"></textarea>
+              <button id="apply-text-btn-${index}" type="button" class="mt-1 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-1.5 rounded-lg">
+                🔄 Generate Ulang dari Teks Baru (khusus slide ini)
+              </button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs text-slate-500 block mb-1">Background Slide Ini</label>
+                <input type="color" id="quick-bg-${index}" value="#ffffff" class="w-full h-8 border border-slate-300 rounded">
+              </div>
+              <div>
+                <label class="text-xs text-slate-500 block mb-1">Warna Teks Utama</label>
+                <input type="color" id="quick-text-${index}" value="#111111" class="w-full h-8 border border-slate-300 rounded">
+              </div>
+            </div>
+            <button id="apply-quick-color-btn-${index}" type="button" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-1.5 rounded-lg">
+              🎨 Terapkan Warna (langsung, tanpa panggil AI)
+            </button>
+          </div>
+        </details>
+
         <p id="error-msg-${index}" class="hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2"></p>
       </div>
     `;
@@ -1287,8 +1753,20 @@ Aturan wajib lainnya:
     captureSandbox.innerHTML = '';
     captureSandbox.appendChild(fullNode);
 
-    // pastikan font web (Tajawal) sudah selesai dimuat sebelum di-capture
-    try { await document.fonts.ready; } catch(e){}
+    // pastikan semua elemen <img> (mis. gambar konten) SUDAH SELESAI dimuat/decode sebelum
+    // di-capture -- kalau belum, html2canvas bisa menangkap ukuran fallback yang salah
+    // (gejalanya: gambar melebar penuh selebar canvas padahal harusnya sesuai frame).
+    const imgsToWait = Array.from(fullNode.querySelectorAll('img'));
+    await Promise.all(imgsToWait.map(img => {
+      if (typeof img.decode === 'function'){
+        return img.decode().catch(() => {});
+      }
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener('error', resolve, { once: true });
+      });
+    }));
 
     const canvasResult = await html2canvas(fullNode, {
       width: EXPORT_WIDTH,
@@ -1347,7 +1825,9 @@ Aturan wajib lainnya:
     applyChosenRatio();
 
     slides = rawParts.map((text, i) => {
-      const { cleanText, alignOverride } = extractAlignOverride(text);
+      const { cleanText: afterAlign, alignOverride } = extractAlignOverride(text);
+      const { cleanText, imageFrame } = extractImageFrame(afterAlign);
+      const hasTags = hasStructureTags(cleanText);
       return {
         id: i,
         rawText: cleanText,
@@ -1355,7 +1835,11 @@ Aturan wajib lainnya:
         status: 'pending',
         isRtl: forceRtl.checked || containsArabic(cleanText),
         contentImage: null,
-        alignOverride: alignOverride
+        alignOverride: alignOverride,
+        hasSpacer: hasSpacerToken(cleanText),
+        imageFrame: imageFrame,
+        hasStructureTags: hasTags,
+        tagBlocks: hasTags ? buildBlocksFromTags(cleanText) : null
       };
     });
 
@@ -1371,20 +1855,78 @@ Aturan wajib lainnya:
     generateBtn.textContent = '⏳ Sedang memproses...';
     document.querySelectorAll('input[name="slideRatio"]').forEach(r => r.disabled = true);
 
-    for (let i = 0; i < slides.length; i++){
-      try {
-        const design = await generateDesignForSlide(slides[i].rawText, slides[i].isRtl, i);
-        slides[i].design = design;
-        renderSlidePreview(i);
-        setStatus(i, 'done');
-      } catch(err){
-        setStatus(i, 'error', err.message);
+    const modeEl = document.querySelector('input[name="generateMode"]:checked');
+    const mode = modeEl ? modeEl.value : 'per-slide';
+
+    if (mode === 'combined' && slides.length > 1){
+      await runCombinedGeneration();
+    } else {
+      for (let i = 0; i < slides.length; i++){
+        try {
+          const design = await generateDesignForSlide(slides[i].rawText, slides[i].isRtl, i);
+          slides[i].design = design;
+          renderSlidePreview(i);
+          setStatus(i, 'done');
+        } catch(err){
+          setStatus(i, 'error', err.message);
+        }
       }
     }
 
     generateBtn.disabled = false;
     generateBtn.textContent = '✨ Generate Semua Slide';
     document.querySelectorAll('input[name="slideRatio"]').forEach(r => r.disabled = false);
+  }
+
+  // Mode "Generate Sekaligus": gabung SEMUA slide jadi SATU request API (hemat RPD drastis --
+  // 10 slide = 1 request, bukan 10). Trade-off: kalau request ini gagal/kepotong token, SEMUA
+  // slide gagal bareng (all-or-nothing), beda dari mode per-slide yang lebih tahan banting.
+  async function runCombinedGeneration(){
+    const colorMode = document.querySelector('input[name="textColorMode"]:checked').value;
+
+    const slideNotes = slides.map((s, i) => {
+      const targetAlign = resolveTextAlign(i);
+      let note = `--- SLIDE ${i + 1} ---\nTeks: """${s.rawText}"""\ntext_align WAJIB untuk slide ini: "${targetAlign}" (rata ${ALIGN_LABEL_ID[targetAlign]}).`;
+      if (s.isRtl) note += `\nSlide ini mengandung karakter Arab.`;
+      if (s.imageFrame && s.imageFrame.position !== 'center'){
+        note += `\nAda frame gambar TEPI "${s.imageFrame.position}" seluas ${s.imageFrame.size_pct}% -> "content_image_placement" WAJIB diisi persis {"position":"${s.imageFrame.position}","size_pct":${s.imageFrame.size_pct}}.`;
+      } else if (s.imageFrame && s.imageFrame.position === 'center'){
+        note += `\nSlide ini mengandung token literal "[GAMBAR:tengah:${s.imageFrame.size_pct}]" -- ikuti aturan 6b (content_block role "image-slot"), JANGAN isi content_image_placement.`;
+      }
+      if (s.hasSpacer) note += `\nSlide ini pakai token [SPASI] -> "vertical_position" WAJIB "center".`;
+      if (s.hasStructureTags) note += `\nSlide ini pakai tag [JUDUL]/[ISI] eksplisit -- isi "content_blocks": [] (array kosong) untuk slide ini, kode kita yang akan menyusun strukturnya sendiri.`;
+      const allowColor = colorMode === 'all' || (colorMode === 'slide1' && i === 0);
+      note += `\nVariasi warna teks (field "color" per blok, kalau content_blocks diisi): ${allowColor ? 'BOLEH dipakai untuk 1-3 kata kunci' : 'WAJIB null semua, TIDAK ADA variasi warna'}.`;
+      return note;
+    }).join('\n\n');
+
+    const contents = [
+      { role: 'user', parts: [{ text: slideNotes }] }
+    ];
+
+    try {
+      const result = await callAIWithFallback(contents, colorMode !== 'none', slides.length);
+      const designs = Array.isArray(result) ? result : result.designs;
+      if (!Array.isArray(designs) || designs.length !== slides.length){
+        throw new Error(`AI mengembalikan jumlah desain yang tidak sesuai (dapat ${Array.isArray(designs) ? designs.length : 0}, harusnya ${slides.length}). Coba lagi atau pakai mode Per-Slide.`);
+      }
+      designs.forEach((design, i) => {
+        design.text_align = resolveTextAlign(i);
+        if (slides[i].hasSpacer) design.vertical_position = 'center';
+        if (slides[i].imageFrame && slides[i].imageFrame.position !== 'center'){
+          design.content_image_placement = slides[i].imageFrame;
+        }
+        if (slides[i].hasStructureTags){
+          design.content_blocks = slides[i].tagBlocks;
+        }
+        slides[i].design = design;
+        renderSlidePreview(i);
+        setStatus(i, 'done');
+      });
+    } catch(err){
+      // all-or-nothing: request gabungan gagal -> semua slide di batch ini ditandai gagal
+      slides.forEach((s, i) => setStatus(i, 'error', err.message));
+    }
   }
 
   function attachSlideBlockEvents(index){
@@ -1401,6 +1943,63 @@ Aturan wajib lainnya:
       if (e.target.files && e.target.files[0]) handleContentImageSelect(index, e.target.files[0]);
     });
     document.getElementById(`content-image-remove-${index}`).addEventListener('click', () => removeContentImage(index));
+
+    // edit teks konten khusus slide ini
+    const editTextArea = document.getElementById(`edit-text-${index}`);
+    editTextArea.value = slides[index].rawText;
+    renderFormatToolbar(document.getElementById(`fmt-toolbar-edit-${index}`), editTextArea);
+    document.getElementById(`apply-text-btn-${index}`).addEventListener('click', () => applyTextEdit(index));
+
+    // color picker cepat (langsung, tanpa panggil AI)
+    document.getElementById(`apply-quick-color-btn-${index}`).addEventListener('click', () => applyQuickColors(index));
+  }
+
+  async function applyTextEdit(index){
+    const textarea = document.getElementById(`edit-text-${index}`);
+    const newRawText = textarea.value.trim();
+    if (!newRawText) return;
+    if (!hasAnyApiKey()){
+      showSidebarError('Mohon isi minimal satu API key provider AI terlebih dahulu.');
+      return;
+    }
+
+    // proses ulang token [RATA]/[SPASI]/[GAMBAR]/[JUDUL]/[ISI] dari teks baru ini, konsisten dengan parsing awal
+    const { cleanText: afterAlign, alignOverride } = extractAlignOverride(newRawText);
+    const { cleanText, imageFrame } = extractImageFrame(afterAlign);
+    const hasTags = hasStructureTags(cleanText);
+    slides[index].rawText = cleanText;
+    slides[index].alignOverride = alignOverride;
+    slides[index].hasSpacer = hasSpacerToken(cleanText);
+    slides[index].imageFrame = imageFrame;
+    slides[index].isRtl = forceRtl.checked || containsArabic(cleanText);
+    slides[index].hasStructureTags = hasTags;
+    slides[index].tagBlocks = hasTags ? buildBlocksFromTags(cleanText) : null;
+    textarea.value = cleanText;
+
+    setStatus(index, 'loading');
+    try {
+      const design = await generateDesignForSlide(slides[index].rawText, slides[index].isRtl, index);
+      slides[index].design = design;
+      renderSlidePreview(index);
+      setStatus(index, 'done');
+    } catch(err){
+      setStatus(index, 'error', err.message);
+    }
+  }
+
+  function applyQuickColors(index){
+    if (!slides[index].design){
+      showSidebarError('Slide ini belum memiliki desain, klik "Coba Lagi" dulu.');
+      return;
+    }
+    // Langsung ubah objek desain yang sudah ada & render ulang -- TANPA panggil AI sama sekali,
+    // karena kita sudah tahu persis warna hex yang mau dipakai (tidak perlu ditebak).
+    const bgVal = document.getElementById(`quick-bg-${index}`).value;
+    const textVal = document.getElementById(`quick-text-${index}`).value;
+    slides[index].design.background_color = bgVal;
+    slides[index].design.background_gradient = null; // matikan gradient supaya warna solid ini kelihatan
+    slides[index].design.text_color = textVal;
+    renderSlidePreview(index);
   }
 
   function handleContentImageSelect(index, file){
@@ -1413,12 +2012,32 @@ Aturan wajib lainnya:
       thumb.src = ev.target.result;
       preview.classList.remove('hidden');
       preview.classList.add('flex');
+
+      // Simpan rasio asli gambar (naturalWidth/naturalHeight) -- html2canvas TIDAK mendukung
+      // object-fit dengan benar (gambar jadi melebar penuh saat di-capture), jadi ukuran pas-nya
+      // harus dihitung manual pakai JS pada saat render, bukan diserahkan ke CSS object-fit.
+      const probeImg = new Image();
+      probeImg.onload = () => {
+        slides[index].contentImageAspect = probeImg.naturalWidth / probeImg.naturalHeight;
+        // kalau frame dari token, re-render setelah aspect ratio siap supaya ukurannya pas
+        if (slides[index].imageFrame && slides[index].design){
+          renderSlidePreview(index);
+        }
+      };
+      probeImg.src = ev.target.result;
+
+      // Kalau slide ini sudah punya frame dari token [GAMBAR], posisinya sudah pasti (deterministik) --
+      // jadi gambar bisa langsung dirender ke frame tanpa perlu panggil API lagi sama sekali (gratis).
+      if (slides[index].imageFrame && slides[index].design){
+        renderSlidePreview(index);
+      }
     };
     reader.readAsDataURL(file);
   }
 
   function removeContentImage(index){
     slides[index].contentImage = null;
+    slides[index].contentImageAspect = null;
     const preview = document.getElementById(`content-image-preview-${index}`);
     preview.classList.add('hidden');
     preview.classList.remove('flex');
@@ -1443,11 +2062,50 @@ Aturan wajib lainnya:
     }
   }
 
+  const GESER_REGEX = /geser\s+(teks|gambar)\s+ke\s+(atas|bawah|kiri|kanan)\s+(\d+)\s*(enter|tab)/i;
+
+  // Coba tangani instruksi "geser ..." langsung lewat kode (gratis, 0 token API).
+  // Return true kalau instruksinya cocok & berhasil diproses (reviseSlide berhenti di sini,
+  // tidak lanjut panggil AI). Return false kalau bukan instruksi geser (lanjut proses normal).
+  function tryApplyGeserInstruction(index, instruction){
+    const match = instruction.match(GESER_REGEX);
+    if (!match) return false;
+    if (!slides[index].design){
+      showSidebarError('Slide ini belum memiliki desain, klik "Coba Lagi" dulu.');
+      return true;
+    }
+
+    const [, target, direction, amountStr, unitRaw] = match;
+    const amount = parseInt(amountStr, 10);
+    const unit = unitRaw.toLowerCase();
+    const isVertical = (direction.toLowerCase() === 'atas' || direction.toLowerCase() === 'bawah');
+    const sign = (direction.toLowerCase() === 'atas' || direction.toLowerCase() === 'kiri') ? -1 : 1;
+    const unitPx = unit === 'enter' ? (EXPORT_HEIGHT * 0.10) : (EXPORT_WIDTH * 0.10);
+    const deltaPx = sign * amount * unitPx;
+
+    const design = slides[index].design;
+    if (target.toLowerCase() === 'teks'){
+      if (isVertical) design.text_offset_y = (design.text_offset_y || 0) + deltaPx;
+      else design.text_offset_x = (design.text_offset_x || 0) + deltaPx;
+    } else {
+      if (isVertical) design.image_offset_y = (design.image_offset_y || 0) + deltaPx;
+      else design.image_offset_x = (design.image_offset_x || 0) + deltaPx;
+    }
+
+    renderSlidePreview(index);
+    document.getElementById(`revise-input-${index}`).value = '';
+    return true;
+  }
+
   async function reviseSlide(index){
     const input = document.getElementById(`revise-input-${index}`);
     const instruction = input.value.trim();
     const contentImage = slides[index].contentImage;
     if (!instruction && !contentImage) return;
+
+    // instruksi "geser ..." ditangani lokal (gratis, 0 token API), tidak perlu API key sama sekali
+    if (instruction && tryApplyGeserInstruction(index, instruction)) return;
+
     if (!hasAnyApiKey()){
       showSidebarError('Mohon isi minimal satu API key provider AI terlebih dahulu.');
       return;
@@ -1475,6 +2133,7 @@ Aturan wajib lainnya:
 
   init();
   updateWatermarkPreview();
+  renderFormatToolbar(document.getElementById('fmt-toolbar-main'), rawTextArea);
 })();
 </script>
 </body>
