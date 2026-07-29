@@ -522,9 +522,9 @@
   // Ikon dibuat monokrom & disederhanakan (bukan reproduksi persis logo resmi berwarna),
   // pakai currentColor supaya warnanya otomatis ikut warna teks slide.
   const PLATFORM_ICONS = {
-    instagram: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.15" fill="currentColor"/></svg>',
-    facebook: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M13.5 8.2h-1c-.6 0-1 .4-1 1V11H9.8v2h1.7v5h2v-5h1.4l.3-2h-1.7V9.5c0-.3.2-.5.5-.5h1.2V8.2z" fill="currentColor"/></svg>',
-    tiktok: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="17" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M12.5 17V4h2.8c.4 2.8 2.4 5 5.2 5.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    instagram: '<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.15" fill="currentColor"/></svg>',
+    facebook: '<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M13.5 8.2h-1c-.6 0-1 .4-1 1V11H9.8v2h1.7v5h2v-5h1.4l.3-2h-1.7V9.5c0-.3.2-.5.5-.5h1.2V8.2z" fill="currentColor"/></svg>',
+    tiktok: '<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="17" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M12.5 17V4h2.8c.4 2.8 2.4 5 5.2 5.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
 
   // Baca centang platform + input nama, tentukan mode tampilan watermark:
@@ -561,24 +561,22 @@
   }
 
   function buildWatermarkNode(config, color, accentColor){
-    const ROW_SIZE = 36; // px -- tinggi baris TETAP, ikon & teks dipaksa ke ukuran ini PERSIS
-                          // (bukan line-height relatif) supaya html2canvas tidak perlu menebak
-                          // tinggi baris dari font metric -- ini akar masalah "ikon superscript"
-                          // yang berulang kali muncul untuk kasus serupa (highlight, dsb).
+    const ICON_SIZE = 32; // px -- diperbesar supaya sepadan visual sama font watermark (32px)
     const wm = document.createElement('div');
+    wm.dataset.wmRow = 'true';
     wm.style.display = 'flex';
     wm.style.alignItems = 'center';
     wm.style.gap = '10px';
     wm.style.color = color;
-    wm.style.height = ROW_SIZE + 'px';
 
     function makeIcon(key){
       const span = document.createElement('span');
+      span.dataset.wmItem = 'true';
       span.style.display = 'flex';
       span.style.alignItems = 'center';
       span.style.justifyContent = 'center';
-      span.style.width = ROW_SIZE + 'px';
-      span.style.height = ROW_SIZE + 'px';
+      span.style.width = ICON_SIZE + 'px';
+      span.style.height = ICON_SIZE + 'px';
       span.style.flexShrink = '0';
       span.style.color = color;
       span.innerHTML = PLATFORM_ICONS[key];
@@ -587,9 +585,7 @@
 
     function makeText(name){
       const textEl = document.createElement('span');
-      textEl.style.display = 'inline-block';
-      textEl.style.height = ROW_SIZE + 'px';
-      textEl.style.lineHeight = ROW_SIZE + 'px'; // pixel eksplisit, BUKAN "1" (relatif ke font-size)
+      textEl.dataset.wmItem = 'true';
       textEl.textContent = name;
       return textEl;
     }
@@ -610,9 +606,9 @@
     // mode 'groups': tiap grup = kumpulan ikon platform bernama sama, diikuti SATU nama
     config.groups.forEach(group => {
       const groupWrap = document.createElement('span');
+      groupWrap.dataset.wmRow = 'true';
       groupWrap.style.display = 'flex';
       groupWrap.style.alignItems = 'center';
-      groupWrap.style.height = ROW_SIZE + 'px';
       groupWrap.style.gap = '6px';
       group.platforms.forEach(p => groupWrap.appendChild(makeIcon(p.key)));
       groupWrap.appendChild(makeText(group.name));
@@ -1211,6 +1207,31 @@ Aturan wajib lainnya:
   }
 
   // ---------- RENDER SLIDE DOM (full resolution 1080x1350) ----------
+  // Dipanggil SETELAH canvasNode di-attach ke DOM asli (baik preview maupun capture).
+  // Sama seperti kasus highlight sebelumnya: flexbox align-items TIDAK bisa diandalkan
+  // 100% di html2canvas untuk menyelaraskan ikon SVG vs teks (ukurannya beda "jenis" --
+  // vector vs font metric). Solusi pasti: ukur posisi ASLI hasil render browser (yang sudah
+  // terbukti presisi), lalu paksa tiap item ke posisi vertikal-center yang benar lewat
+  // transform:translateY() -- bukan lagi berharap flexbox dihitung ulang dengan benar oleh html2canvas.
+  function finalizeWatermarkAlignment(canvasNode, scale){
+    const rows = canvasNode.querySelectorAll('[data-wm-row="true"]');
+    rows.forEach(row => {
+      const rowRect = row.getBoundingClientRect();
+      if (rowRect.height === 0) return;
+      const rowCenter = rowRect.top + rowRect.height / 2;
+      const items = row.querySelectorAll(':scope > [data-wm-item="true"]');
+      items.forEach(item => {
+        item.style.transform = 'none'; // reset dulu supaya pengukuran tidak kena transform lama
+        const itemRect = item.getBoundingClientRect();
+        const itemCenter = itemRect.top + itemRect.height / 2;
+        const deltaPx = (rowCenter - itemCenter) / scale;
+        if (Math.abs(deltaPx) > 0.3){
+          item.style.transform = `translateY(${deltaPx}px)`;
+        }
+      });
+    });
+  }
+
   function buildSlideCanvasNode(design, rawText, slideIndex, totalSlides, contentImageDataUrl){
     const canvas = document.createElement('div');
     canvas.style.width = EXPORT_WIDTH + 'px';
@@ -1766,6 +1787,8 @@ Aturan wajib lainnya:
     canvas.classList.add('slide-canvas');
     canvas.style.transform = `scale(${PREVIEW_SCALE})`;
     frame.appendChild(canvas);
+    // luruskan ikon vs teks watermark pakai posisi ASLI hasil layout browser
+    finalizeWatermarkAlignment(canvas, PREVIEW_SCALE);
   }
 
   // ---------- CAPTURE & DOWNLOAD ----------
@@ -1791,6 +1814,10 @@ Aturan wajib lainnya:
         img.addEventListener('error', resolve, { once: true });
       });
     }));
+
+    // luruskan ikon vs teks watermark pakai posisi ASLI hasil layout browser (scale=1 karena
+    // transform full-size di-set 'none' di atas)
+    finalizeWatermarkAlignment(fullNode, 1);
 
     const canvasResult = await html2canvas(fullNode, {
       width: EXPORT_WIDTH,
