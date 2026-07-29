@@ -561,21 +561,37 @@
   }
 
   function buildWatermarkNode(config, color, accentColor){
+    const ROW_SIZE = 36; // px -- tinggi baris TETAP, ikon & teks dipaksa ke ukuran ini PERSIS
+                          // (bukan line-height relatif) supaya html2canvas tidak perlu menebak
+                          // tinggi baris dari font metric -- ini akar masalah "ikon superscript"
+                          // yang berulang kali muncul untuk kasus serupa (highlight, dsb).
     const wm = document.createElement('div');
     wm.style.display = 'flex';
     wm.style.alignItems = 'center';
     wm.style.gap = '10px';
     wm.style.color = color;
-    wm.style.lineHeight = '1'; // kurangi ambiguitas perhitungan tinggi baris di html2canvas
+    wm.style.height = ROW_SIZE + 'px';
 
     function makeIcon(key){
       const span = document.createElement('span');
-      span.style.display = 'inline-flex';
+      span.style.display = 'flex';
       span.style.alignItems = 'center';
+      span.style.justifyContent = 'center';
+      span.style.width = ROW_SIZE + 'px';
+      span.style.height = ROW_SIZE + 'px';
+      span.style.flexShrink = '0';
       span.style.color = color;
-      span.style.lineHeight = '1';
       span.innerHTML = PLATFORM_ICONS[key];
       return span;
+    }
+
+    function makeText(name){
+      const textEl = document.createElement('span');
+      textEl.style.display = 'inline-block';
+      textEl.style.height = ROW_SIZE + 'px';
+      textEl.style.lineHeight = ROW_SIZE + 'px'; // pixel eksplisit, BUKAN "1" (relatif ke font-size)
+      textEl.textContent = name;
+      return textEl;
     }
 
     if (config.mode === 'dot'){
@@ -587,26 +603,19 @@
       dot.style.display = 'inline-block';
       dot.style.flexShrink = '0';
       wm.appendChild(dot);
-
-      const textEl = document.createElement('span');
-      textEl.style.lineHeight = '1';
-      textEl.textContent = config.name;
-      wm.appendChild(textEl);
+      wm.appendChild(makeText(config.name));
       return wm;
     }
 
     // mode 'groups': tiap grup = kumpulan ikon platform bernama sama, diikuti SATU nama
     config.groups.forEach(group => {
       const groupWrap = document.createElement('span');
-      groupWrap.style.display = 'inline-flex';
+      groupWrap.style.display = 'flex';
       groupWrap.style.alignItems = 'center';
-      groupWrap.style.lineHeight = '1';
+      groupWrap.style.height = ROW_SIZE + 'px';
       groupWrap.style.gap = '6px';
       group.platforms.forEach(p => groupWrap.appendChild(makeIcon(p.key)));
-      const nameEl = document.createElement('span');
-      nameEl.style.lineHeight = '1';
-      nameEl.textContent = group.name;
-      groupWrap.appendChild(nameEl);
+      groupWrap.appendChild(makeText(group.name));
       wm.appendChild(groupWrap);
     });
 
@@ -914,7 +923,7 @@ Jika ingin memakai gradient, isi "background_gradient" dengan objek {"from":"#he
 
 Aturan wajib untuk "content_blocks" (INI KUNCI UTAMA agar desain terasa modern, jangan dilewati):
 1. WAJIB memecah teks asli slide menjadi BEBERAPA blok terpisah (minimal 2 blok jika teks cukup panjang, boleh 1 blok jika teks sangat pendek seperti satu kata). JANGAN mengubah, menambah, atau menghilangkan kata dari teks asli — hanya memecahnya per kalimat/frasa/kata kunci. Gabungan seluruh "text" di semua blok harus tetap merepresentasikan teks asli secara utuh dan berurutan. PENTING: kalau teks asli mengandung penanda seperti "**kata**", "*kata*", "__kata__", "~~kata~~", "^kata^", atau baris berawalan "- " / "1. " — itu PENANDA FORMAT (bold/italic/underline/coret/superskrip/list) yang diproses terpisah oleh sistem kami, BUKAN typo. WAJIB pertahankan penanda itu PERSIS apa adanya di dalam "text", jangan dihapus/diubah/dirapikan.
-2. "role" salah satu dari "heading" (judul/kata kunci paling penting -- ukuran font DIKUNCI 45px, bold), "subheading" (poin penting kedua, 36-48px, bold/semibold), "body" (isi/penjelasan -- ukuran font DIKUNCI 35px, normal), atau "caption" (catatan kecil/sumber/tambahan, 18-24px, normal). Catatan: ukuran font_size_px yang kamu isi untuk role "heading"/"body" akan DIABAIKAN dan diganti paksa 45px/35px oleh sistem (termasuk baris berisi huruf Arab, yang selalu dikunci 45px & TIDAK PERNAH bold apa pun role-nya) -- jadi untuk role tsb isi angka berapa pun, cukup fokus ke pemilihan role & susunan kalimat yang tepat.
+2. "role" salah satu dari "heading" (judul/kata kunci paling penting -- ukuran font DIKUNCI 45px, bold), "subheading" (poin penting kedua, 36-48px, bold/semibold), "body" (isi/penjelasan -- ukuran font DIKUNCI 35px, normal), atau "caption" (catatan kecil/sumber/tambahan, 18-24px, normal). Catatan: ukuran font_size_px yang kamu isi untuk role "heading"/"body" akan DIABAIKAN dan diganti paksa 45px/35px oleh sistem, KECUALI baris yang berisi huruf Arab -- baris tsb selalu dikunci 55px & TIDAK PERNAH bold apa pun role-nya -- jadi untuk role tsb isi angka berapa pun, cukup fokus ke pemilihan role & susunan kalimat yang tepat.
 3. Untuk teks yang panjang (lebih dari satu kalimat), SELALU coba temukan 1 kata atau frasa pendek yang paling penting untuk dijadikan blok "heading" tersendiri agar ada hierarki visual — penekanan ini WAJIB dilakukan lewat ukuran font & ketebalan (font_size_px & font_weight berbeda per role), JANGAN jadikan semua teks dalam satu blok "body" datar dengan ukuran seragam.
 4. "icon": isi dengan SATU emoji yang relevan secara makna sebagai ilustrasi sederhana pendamping teks (opsional, gunakan pada maksimal 1-2 blok yang paling cocok, isi null jika tidak relevan). Jangan paksakan emoji jika tidak ada yang benar-benar relevan.
 5. Urutan array "content_blocks" merepresentasikan urutan tampil dari atas ke bawah (atau kanan ke kiri urutan logis jika is_rtl true).
@@ -1269,15 +1278,28 @@ Aturan wajib lainnya:
     let topChromeExtent = 0;
     if (hasWatermarkContent && wmVSide === 'top') topChromeExtent = 44 + WM_APPROX_HEIGHT;
 
+    // ---- gambar konten posisi TEPI (bawah/kiri/kanan): dihitung DI SINI (sebelum safe-zone),
+    // supaya margin horizontal safe-zone bisa tahu apakah perlu direservasi lebar buat frame
+    // kiri/kanan atau tidak. Prioritaskan frame dari token [GAMBAR] (deterministik), fallback ke
+    // keputusan AI (content_image_placement) kalau upload lewat alur revisi lama. Posisi "tengah"
+    // TIDAK masuk sini -- itu ditangani lewat content_block "image-slot" di loop blocks di bawah.
+    const tokenFrame = slides[slideIndex] && slides[slideIndex].imageFrame;
+    const edgeFramePlacement = (tokenFrame && tokenFrame.position !== 'center')
+      ? tokenFrame
+      : (design.content_image_placement && design.content_image_placement.position !== 'center' ? design.content_image_placement : null);
+    const hasHorizontalFrame = edgeFramePlacement && (edgeFramePlacement.position === 'left' || edgeFramePlacement.position === 'right');
+
     // ---- SAFE ZONE: area konten (teks + gambar) selalu punya margin dari SEMUA sisi kanvas.
     // Atas & bawah: persis "1 enter" DI LUAR jangkauan watermark/dots/panah yang sesungguhnya
     // (bukan angka tetap kebetulan aman) -- supaya gambar/teks TIDAK PERNAH menutupi elemen itu.
-    // Kiri & kanan: tetap "1 tab" flat dari tepi (belum ada elemen UI horizontal yang perlu dikejar).
+    // Kiri & kanan: "1 tab" HANYA kalau memang ada frame gambar di kiri/kanan (perlu ruang buat
+    // frame itu) -- kalau tidak ada, margin tipis saja (3%) supaya teks bisa memaksimalkan lebar
+    // kanvas, tidak kepotong dobel sama padding_px dari AI di atasnya.
     const enterUnit = EXPORT_HEIGHT * 0.10;
     const tabUnit = EXPORT_WIDTH * 0.10;
     const marginTop = topChromeExtent + enterUnit;
     const marginBottom = bottomChromeExtent + enterUnit;
-    const marginX = tabUnit;
+    const marginX = hasHorizontalFrame ? tabUnit : (EXPORT_WIDTH * 0.03);
     const safeWidth = EXPORT_WIDTH - marginX * 2;
     const safeHeight = EXPORT_HEIGHT - marginTop - marginBottom;
 
@@ -1288,15 +1310,6 @@ Aturan wajib lainnya:
     safeZone.style.left = marginX + 'px';
     safeZone.style.right = marginX + 'px';
     canvas.appendChild(safeZone);
-
-    // ---- gambar konten posisi TEPI (bawah/kiri/kanan): prioritaskan frame dari token [GAMBAR]
-    // (deterministik), fallback ke keputusan AI (content_image_placement) kalau upload lewat alur
-    // revisi lama. Posisi "tengah" TIDAK masuk sini -- itu ditangani lewat content_block "image-slot"
-    // di dalam loop blocks di bawah (supaya bisa disisipkan di antara teks, pola Judul-gambar-Keterangan).
-    const tokenFrame = slides[slideIndex] && slides[slideIndex].imageFrame;
-    const edgeFramePlacement = (tokenFrame && tokenFrame.position !== 'center')
-      ? tokenFrame
-      : (design.content_image_placement && design.content_image_placement.position !== 'center' ? design.content_image_placement : null);
 
     // Helper: render gambar dengan fit manual (html2canvas TIDAK mendukung object-fit dengan benar,
     // jadi ukuran pas-nya dihitung sendiri dari aspect ratio asli, bukan diserahkan ke CSS).
@@ -1481,10 +1494,11 @@ Aturan wajib lainnya:
         }
 
         // Ukuran font ditentukan TETAP (bukan rentang bebas dari AI): Judul=45px, Teks biasa=35px,
-        // baris Arab SELALU 45px berapa pun role-nya. subheading/caption tetap fleksibel.
+        // baris Arab SELALU 55px berapa pun role-nya (lebih besar dari Latin karena karakter Arab
+        // + harakat butuh ruang lebih supaya nyaman dibaca). subheading/caption tetap fleksibel.
         let resolvedFontSize;
         if (lineIsArabic){
-          resolvedFontSize = 45;
+          resolvedFontSize = 55;
         } else if (block.role === 'heading'){
           resolvedFontSize = 45;
         } else if (block.role === 'subheading'){
