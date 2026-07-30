@@ -569,18 +569,20 @@
     wm.style.gap = '10px';
     wm.style.color = color;
 
+    // Ikon dirender sebagai <img> (data URI dari SVG), BUKAN <svg> hidup di DOM.
+    // html2canvas terbukti akurat menggambar <img> (jalur yang sama dipakai gambar konten),
+    // tapi rawan meleset kalau harus merender ulang pohon DOM <svg> + flexbox + teks sekaligus.
+    // currentColor tidak berlaku di dalam <img>, jadi warnanya di-inject langsung ke string SVG.
     function makeIcon(key){
-      const span = document.createElement('span');
-      span.dataset.wmItem = 'true';
-      span.style.display = 'flex';
-      span.style.alignItems = 'center';
-      span.style.justifyContent = 'center';
-      span.style.width = ICON_SIZE + 'px';
-      span.style.height = ICON_SIZE + 'px';
-      span.style.flexShrink = '0';
-      span.style.color = color;
-      span.innerHTML = PLATFORM_ICONS[key];
-      return span;
+      const svgWithColor = PLATFORM_ICONS[key].replace(/currentColor/g, color);
+      const img = document.createElement('img');
+      img.dataset.wmItem = 'true';
+      img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svgWithColor);
+      img.style.width = ICON_SIZE + 'px';
+      img.style.height = ICON_SIZE + 'px';
+      img.style.display = 'block';
+      img.style.flexShrink = '0';
+      return img;
     }
 
     function makeText(name){
@@ -1207,30 +1209,6 @@ Aturan wajib lainnya:
   }
 
   // ---------- RENDER SLIDE DOM (full resolution 1080x1350) ----------
-  // Dipanggil SETELAH canvasNode di-attach ke DOM asli (baik preview maupun capture).
-  // Sama seperti kasus highlight sebelumnya: flexbox align-items TIDAK bisa diandalkan
-  // 100% di html2canvas untuk menyelaraskan ikon SVG vs teks (ukurannya beda "jenis" --
-  // vector vs font metric). Solusi pasti: ukur posisi ASLI hasil render browser (yang sudah
-  // terbukti presisi), lalu paksa tiap item ke posisi vertikal-center yang benar lewat
-  // transform:translateY() -- bukan lagi berharap flexbox dihitung ulang dengan benar oleh html2canvas.
-  function finalizeWatermarkAlignment(canvasNode, scale){
-    const rows = canvasNode.querySelectorAll('[data-wm-row="true"]');
-    rows.forEach(row => {
-      const rowRect = row.getBoundingClientRect();
-      if (rowRect.height === 0) return;
-      const rowCenter = rowRect.top + rowRect.height / 2;
-      const items = row.querySelectorAll(':scope > [data-wm-item="true"]');
-      items.forEach(item => {
-        item.style.transform = 'none'; // reset dulu supaya pengukuran tidak kena transform lama
-        const itemRect = item.getBoundingClientRect();
-        const itemCenter = itemRect.top + itemRect.height / 2;
-        const deltaPx = (rowCenter - itemCenter) / scale;
-        if (Math.abs(deltaPx) > 0.3){
-          item.style.transform = `translateY(${deltaPx}px)`;
-        }
-      });
-    });
-  }
 
   function buildSlideCanvasNode(design, rawText, slideIndex, totalSlides, contentImageDataUrl){
     const canvas = document.createElement('div');
@@ -1787,8 +1765,6 @@ Aturan wajib lainnya:
     canvas.classList.add('slide-canvas');
     canvas.style.transform = `scale(${PREVIEW_SCALE})`;
     frame.appendChild(canvas);
-    // luruskan ikon vs teks watermark pakai posisi ASLI hasil layout browser
-    finalizeWatermarkAlignment(canvas, PREVIEW_SCALE);
   }
 
   // ---------- CAPTURE & DOWNLOAD ----------
@@ -1814,10 +1790,6 @@ Aturan wajib lainnya:
         img.addEventListener('error', resolve, { once: true });
       });
     }));
-
-    // luruskan ikon vs teks watermark pakai posisi ASLI hasil layout browser (scale=1 karena
-    // transform full-size di-set 'none' di atas)
-    finalizeWatermarkAlignment(fullNode, 1);
 
     const canvasResult = await html2canvas(fullNode, {
       width: EXPORT_WIDTH,
