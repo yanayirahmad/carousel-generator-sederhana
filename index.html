@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Carousel Generator</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.13/html-to-image.min.js"></script>
 <style>
   body { font-family: 'Segoe UI', Arial, sans-serif; }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -569,9 +569,10 @@
     wm.style.gap = '10px';
     wm.style.color = color;
 
-    // Ikon dirender sebagai <img> (data URI dari SVG), BUKAN <svg> hidup di DOM.
-    // html2canvas terbukti akurat menggambar <img> (jalur yang sama dipakai gambar konten),
-    // tapi rawan meleset kalau harus merender ulang pohon DOM <svg> + flexbox + teks sekaligus.
+    // Ikon dirender sebagai <img> (data URI dari SVG). Peninggalan dari waktu masih pakai
+    // html2canvas (sekarang sudah pindah ke html-to-image yang render pakai browser asli,
+    // jadi <svg> hidup sebenarnya sudah aman juga) -- tapi <img> tetap dipertahankan karena
+    // sudah terbukti jalan & tidak ada ruginya.
     // currentColor tidak berlaku di dalam <img>, jadi warnanya di-inject langsung ke string SVG.
     function makeIcon(key){
       const svgWithColor = PLATFORM_ICONS[key].replace(/currentColor/g, color);
@@ -1310,8 +1311,11 @@ Aturan wajib lainnya:
     safeZone.style.right = marginX + 'px';
     canvas.appendChild(safeZone);
 
-    // Helper: render gambar dengan fit manual (html2canvas TIDAK mendukung object-fit dengan benar,
-    // jadi ukuran pas-nya dihitung sendiri dari aspect ratio asli, bukan diserahkan ke CSS).
+    // Helper: render gambar dengan fit manual, menghitung ukuran pas dari aspect ratio asli.
+    // Peninggalan dari waktu masih pakai html2canvas (yang tidak mendukung object-fit dengan
+    // benar) -- sekarang sudah pindah ke html-to-image yang render pakai browser asli, jadi CSS
+    // object-fit sebenarnya sudah aman dipakai juga, tapi perhitungan manual ini tetap dipertahankan
+    // karena hasilnya sudah benar & tidak ada ruginya.
     function renderFittedImage(container, containerW, containerH, dataUrl, aspect){
       const imgEl = document.createElement('img');
       imgEl.src = dataUrl;
@@ -1777,8 +1781,7 @@ Aturan wajib lainnya:
     captureSandbox.appendChild(fullNode);
 
     // pastikan semua elemen <img> (mis. gambar konten) SUDAH SELESAI dimuat/decode sebelum
-    // di-capture -- kalau belum, html2canvas bisa menangkap ukuran fallback yang salah
-    // (gejalanya: gambar melebar penuh selebar canvas padahal harusnya sesuai frame).
+    // di-capture, supaya library punya data gambar utuh saat menyusun SVG snapshot-nya.
     const imgsToWait = Array.from(fullNode.querySelectorAll('img'));
     await Promise.all(imgsToWait.map(img => {
       if (typeof img.decode === 'function'){
@@ -1791,19 +1794,19 @@ Aturan wajib lainnya:
       });
     }));
 
-    const canvasResult = await html2canvas(fullNode, {
+    // htmlToImage (bukan lagi html2canvas): render pakai SVG <foreignObject> -> browser ASLI
+    // yang menggambar (bukan reimplementasi CSS lewat JS) -> jauh lebih akurat untuk
+    // flexbox/gap, SVG, dan skala gambar (object-fit, dsb).
+    const blob = await htmlToImage.toBlob(fullNode, {
       width: EXPORT_WIDTH,
       height: EXPORT_HEIGHT,
-      scale: 1,
-      useCORS: true,
-      backgroundColor: null
+      pixelRatio: 1,
+      cacheBust: true
     });
 
     captureSandbox.innerHTML = '';
 
-    return new Promise(resolve => {
-      canvasResult.toBlob(blob => resolve(blob), 'image/png', 1.0);
-    });
+    return blob;
   }
 
 
@@ -2036,9 +2039,9 @@ Aturan wajib lainnya:
       preview.classList.remove('hidden');
       preview.classList.add('flex');
 
-      // Simpan rasio asli gambar (naturalWidth/naturalHeight) -- html2canvas TIDAK mendukung
-      // object-fit dengan benar (gambar jadi melebar penuh saat di-capture), jadi ukuran pas-nya
-      // harus dihitung manual pakai JS pada saat render, bukan diserahkan ke CSS object-fit.
+      // Simpan rasio asli gambar (naturalWidth/naturalHeight) buat perhitungan fit manual
+      // (renderFittedImage) -- peninggalan dari waktu masih pakai html2canvas, tapi tetap
+      // dipertahankan karena hasilnya sudah benar & tidak ada ruginya.
       const probeImg = new Image();
       probeImg.onload = () => {
         slides[index].contentImageAspect = probeImg.naturalWidth / probeImg.naturalHeight;
