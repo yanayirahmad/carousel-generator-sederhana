@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Carousel Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.13/html-to-image.min.js"></script>
 <style>
@@ -943,11 +946,20 @@ Aturan wajib untuk "content_image_placement" (HANYA untuk gambar di tepi: bawah/
 Aturan wajib lainnya:
 12. background_color dan text_color WAJIB kontras tinggi agar teks sangat mudah dibaca.
 13. Jika teks konten mengandung karakter Arab, "is_rtl" HARUS true (ini murni soal arah baca/susunan ikon, TIDAK terkait "text_align" — nilai "text_align" akan selalu ditentukan lewat catatan tata letak terpisah di pesan user, ikuti itu apa adanya).
-14. "decorations" maksimal 4 elemen dekoratif (garis, lingkaran, atau persegi) yang mempercantik slide TANPA menutupi area teks utama, dan TANPA menutupi area "content_image_placement" jika ada. type hanya boleh "circle", "rectangle", atau "line".
-15. Jika user memberi warna manual sebagai acuan utama, WAJIB gunakan warna tersebut (atau turunannya yang harmonis) untuk background_color/text_color/accent_color.
-16. Jika disertakan gambar sampel gaya (bukan gambar konten), analisis palet warna dominan & mood gambar tersebut, lalu padukan dengan warna manual (jika ada) untuk membangun palet slide.
-17. "vertical_position" salah satu dari "top", "center", "bottom" — sesuaikan dengan komposisi paling estetis untuk teks tersebut.
-18. HANYA kembalikan objek JSON valid tersebut, tidak ada teks lain, tidak ada markdown.`;
+14. "decorations" maksimal 5 elemen dekoratif yang mempercantik slide TANPA menutupi area teks utama, dan TANPA menutupi area "content_image_placement" jika ada. "type" boleh salah satu dari:
+    - "circle" (lingkaran solid, pakai width_px & height_px)
+    - "rectangle" (kotak, pakai width_px & height_px)
+    - "line" (garis lurus tipis, pakai width_px sebagai panjang, height_px sebagai ketebalan)
+    - "blob" (bentuk organik melengkung acak, pakai width_px & height_px sebagai ukuran -- cocok buat aksen lembut di pojok)
+    - "wave" (garis bergelombang dekoratif, pakai width_px sebagai panjang, height_px sebagai amplitudo)
+    - "dots-grid" (pola titik-titik sebagai tekstur, pakai width_px & height_px sebagai luas area pola)
+    - "hand-border" (bingkai tepi kanvas bergaya coretan tangan/wobbly, HANYA cocok dipakai 1x per slide sebagai bingkai penuh, bukan elemen kecil -- kalau dipakai, JANGAN kombinasikan sama decoration lain yang menutupi tepi kanvas)
+    VARIASIKAN kombinasi tipe per slide (jangan selalu circle semua) -- misal kombinasikan 1 blob besar transparan di pojok + 1-2 dots-grid kecil sebagai tekstur + 1 wave sebagai aksen, supaya slide terasa hidup dan modern, tidak flat/kaku.
+15. "background_gradient" JANGAN dianggap opsi langka -- SERING pakai ini (targetnya sekitar separuh dari slide yang kamu desain) untuk kesan lebih modern & tidak flat, terutama gradient soft 2 warna yang senada (misal dari warna terang ke sedikit lebih gelap/beda hue tipis). Tetap isi "background_color" sebagai fallback solid.
+16. Jika user memberi warna manual sebagai acuan utama, WAJIB gunakan warna tersebut (atau turunannya yang harmonis) untuk background_color/text_color/accent_color.
+17. Jika disertakan gambar sampel gaya (bukan gambar konten), analisis palet warna dominan & mood gambar tersebut, lalu padukan dengan warna manual (jika ada) untuk membangun palet slide.
+18. "vertical_position" salah satu dari "top", "center", "bottom" — sesuaikan dengan komposisi paling estetis untuk teks tersebut.
+19. HANYA kembalikan objek JSON valid tersebut, tidak ada teks lain, tidak ada markdown.`;
   }
 
 
@@ -1229,18 +1241,112 @@ Aturan wajib lainnya:
       canvas.style.backgroundColor = design.background_color || '#ffffff';
     }
 
-    // decorations
-    (design.decorations || []).forEach(dec => {
+    // ---- dekorasi: circle/rectangle/line (lama) + blob/wave/dots-grid/hand-border (baru) ----
+    // Semua bentuk baru murni CSS/SVG, tidak nambah biaya API sama sekali.
+    // Wobble hand-border pakai pseudo-random SEEDED (bukan Math.random()) supaya hasilnya
+    // identik antara preview & download (desain yang sama = wobble yang sama persis).
+    function seededRandom(seed){
+      const x = Math.sin(seed) * 10000;
+      return (x - Math.floor(x)) * 2 - 1; // -1..1
+    }
+
+    function buildHandDrawnBorderPath(w, h, seed, inset){
+      const jitter = 6;
+      const cols = 6, rows = 8;
+      const pts = [];
+      for (let i = 0; i <= cols; i++){
+        pts.push([inset + (w - 2*inset) * (i/cols) + seededRandom(seed + i) * jitter, inset + seededRandom(seed + i + 50) * jitter]);
+      }
+      for (let i = 1; i <= rows; i++){
+        pts.push([w - inset + seededRandom(seed + i + 100) * jitter, inset + (h - 2*inset) * (i/rows) + seededRandom(seed + i + 150) * jitter]);
+      }
+      for (let i = 1; i <= cols; i++){
+        pts.push([w - inset - (w - 2*inset) * (i/cols) + seededRandom(seed + i + 200) * jitter, h - inset + seededRandom(seed + i + 250) * jitter]);
+      }
+      for (let i = 1; i < rows; i++){
+        pts.push([inset + seededRandom(seed + i + 300) * jitter, h - inset - (h - 2*inset) * (i/rows) + seededRandom(seed + i + 350) * jitter]);
+      }
+      return 'M ' + pts.map(p => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' L ') + ' Z';
+    }
+
+    (design.decorations || []).forEach((dec, decIdx) => {
+      const type = dec.type || 'circle';
+      const decColor = dec.color || (design.accent_color || '#000000');
+      const decOpacity = (dec.opacity != null ? dec.opacity : 0.2);
+
+      if (type === 'blob'){
+        const el = document.createElement('div');
+        el.style.position = 'absolute';
+        el.style.top = (dec.top_pct != null ? dec.top_pct : 0) + '%';
+        el.style.left = (dec.left_pct != null ? dec.left_pct : 0) + '%';
+        el.style.width = (dec.width_px || 160) + 'px';
+        el.style.height = (dec.height_px || dec.width_px || 160) + 'px';
+        el.style.backgroundColor = decColor;
+        el.style.opacity = decOpacity;
+        // border-radius asimetris = trik CSS klasik buat bentuk organik/blob
+        el.style.borderRadius = '62% 38% 55% 45% / 45% 60% 40% 55%';
+        el.style.transform = `rotate(${dec.rotation_deg || 0}deg)`;
+        el.style.pointerEvents = 'none';
+        canvas.appendChild(el);
+        return;
+      }
+
+      if (type === 'wave'){
+        const w = dec.width_px || 200;
+        const h = (dec.height_px || 40);
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'absolute';
+        wrapper.style.top = (dec.top_pct != null ? dec.top_pct : 0) + '%';
+        wrapper.style.left = (dec.left_pct != null ? dec.left_pct : 0) + '%';
+        wrapper.style.transform = `rotate(${dec.rotation_deg || 0}deg)`;
+        wrapper.style.opacity = decOpacity;
+        wrapper.style.pointerEvents = 'none';
+        wrapper.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" fill="none" xmlns="${svgNS}"><path d="M0 ${h/2} Q ${w*0.125} 0 ${w*0.25} ${h/2} T ${w*0.5} ${h/2} T ${w*0.75} ${h/2} T ${w} ${h/2}" stroke="${decColor}" stroke-width="4" stroke-linecap="round"/></svg>`;
+        canvas.appendChild(wrapper);
+        return;
+      }
+
+      if (type === 'dots-grid'){
+        const el = document.createElement('div');
+        el.style.position = 'absolute';
+        el.style.top = (dec.top_pct != null ? dec.top_pct : 0) + '%';
+        el.style.left = (dec.left_pct != null ? dec.left_pct : 0) + '%';
+        el.style.width = (dec.width_px || 160) + 'px';
+        el.style.height = (dec.height_px || dec.width_px || 160) + 'px';
+        el.style.opacity = decOpacity;
+        el.style.backgroundImage = `radial-gradient(circle, ${decColor} 1.6px, transparent 1.6px)`;
+        el.style.backgroundSize = '18px 18px';
+        el.style.transform = `rotate(${dec.rotation_deg || 0}deg)`;
+        el.style.pointerEvents = 'none';
+        canvas.appendChild(el);
+        return;
+      }
+
+      if (type === 'hand-border'){
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const seed = decIdx * 137 + 7; // seeded, bukan Math.random() -> identik tiap render ulang
+        const pathD = buildHandDrawnBorderPath(EXPORT_WIDTH, EXPORT_HEIGHT, seed, 28);
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'absolute';
+        wrapper.style.inset = '0';
+        wrapper.style.pointerEvents = 'none';
+        wrapper.innerHTML = `<svg width="${EXPORT_WIDTH}" height="${EXPORT_HEIGHT}" viewBox="0 0 ${EXPORT_WIDTH} ${EXPORT_HEIGHT}" fill="none" xmlns="${svgNS}"><path d="${pathD}" stroke="${decColor}" stroke-width="${dec.width_px && dec.width_px < 20 ? dec.width_px : 6}" stroke-linecap="round" stroke-linejoin="round" opacity="${decOpacity}"/></svg>`;
+        canvas.appendChild(wrapper);
+        return;
+      }
+
+      // circle / rectangle / line (tipe lama)
       const el = document.createElement('div');
       el.style.position = 'absolute';
       el.style.top = (dec.top_pct != null ? dec.top_pct : 0) + '%';
       el.style.left = (dec.left_pct != null ? dec.left_pct : 0) + '%';
       el.style.width = (dec.width_px || 100) + 'px';
-      el.style.height = (dec.type === 'line' ? (dec.height_px || 6) : (dec.height_px || dec.width_px || 100)) + 'px';
-      el.style.backgroundColor = dec.color || (design.accent_color || '#000000');
-      el.style.opacity = (dec.opacity != null ? dec.opacity : 0.2);
+      el.style.height = (type === 'line' ? (dec.height_px || 6) : (dec.height_px || dec.width_px || 100)) + 'px';
+      el.style.backgroundColor = decColor;
+      el.style.opacity = decOpacity;
       el.style.transform = `rotate(${dec.rotation_deg || 0}deg)`;
-      el.style.borderRadius = dec.type === 'circle' ? '50%' : (dec.type === 'rectangle' ? '4px' : '0');
+      el.style.borderRadius = type === 'circle' ? '50%' : (type === 'rectangle' ? '4px' : '0');
       el.style.pointerEvents = 'none';
       canvas.appendChild(el);
     });
@@ -1356,31 +1462,42 @@ Aturan wajib lainnya:
     let edgeFrameSizePx = 0; // dipakai buat hitung inset textWrap di bawah
     if (edgeFramePlacement){
       const sizePct = edgeFramePlacement.size_pct || 35;
+      // frameShadowWrap = wrapper LUAR (posisi, ukuran, border-radius, shadow -- TANPA overflow:hidden,
+      // supaya shadow-nya tidak ikut kepotong). frameBox = wrapper DALAM (overflow:hidden buat
+      // clip gambar/placeholder di dalamnya, ikut border-radius yang sama lewat "inherit").
+      const frameShadowWrap = document.createElement('div');
+      frameShadowWrap.style.position = 'absolute';
+      frameShadowWrap.style.borderRadius = '12px';
+      frameShadowWrap.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18)';
+
       const frameBox = document.createElement('div');
-      frameBox.style.position = 'absolute';
+      frameBox.style.width = '100%';
+      frameBox.style.height = '100%';
       frameBox.style.boxSizing = 'border-box';
       frameBox.style.overflow = 'hidden';
+      frameBox.style.borderRadius = 'inherit';
+      frameShadowWrap.appendChild(frameBox);
 
       let frameW, frameH;
       if (edgeFramePlacement.position === 'left'){
         frameW = safeWidth * sizePct / 100; frameH = safeHeight;
-        frameBox.style.left = '0px'; frameBox.style.top = '0px';
+        frameShadowWrap.style.left = '0px'; frameShadowWrap.style.top = '0px';
         edgeFrameSizePx = frameW;
       } else if (edgeFramePlacement.position === 'right'){
         frameW = safeWidth * sizePct / 100; frameH = safeHeight;
-        frameBox.style.right = '0px'; frameBox.style.top = '0px';
+        frameShadowWrap.style.right = '0px'; frameShadowWrap.style.top = '0px';
         edgeFrameSizePx = frameW;
       } else { // bottom (default)
         frameW = safeWidth; frameH = safeHeight * sizePct / 100;
-        frameBox.style.left = '0px'; frameBox.style.bottom = '0px';
+        frameShadowWrap.style.left = '0px'; frameShadowWrap.style.bottom = '0px';
         edgeFrameSizePx = frameH;
       }
-      frameBox.style.width = frameW + 'px';
-      frameBox.style.height = frameH + 'px';
+      frameShadowWrap.style.width = frameW + 'px';
+      frameShadowWrap.style.height = frameH + 'px';
 
       // offset hasil sintaks "geser gambar ke ... N enter/tab" (diproses kode, bukan AI)
       if (design.image_offset_x || design.image_offset_y){
-        frameBox.style.transform = `translate(${design.image_offset_x || 0}px, ${design.image_offset_y || 0}px)`;
+        frameShadowWrap.style.transform = `translate(${design.image_offset_x || 0}px, ${design.image_offset_y || 0}px)`;
       }
 
       if (contentImageDataUrl){
@@ -1390,7 +1507,7 @@ Aturan wajib lainnya:
         renderDashedPlaceholder(frameBox);
       }
 
-      safeZone.appendChild(frameBox);
+      safeZone.appendChild(frameShadowWrap);
     }
 
     // ---- text container (di dalam safe zone) ----
@@ -1446,15 +1563,23 @@ Aturan wajib lainnya:
       if (block.role === 'image-slot'){
         const slotSizePct = block.size_pct || 35;
         const slotHeightPx = safeHeight * slotSizePct / 100;
+        const slotShadowWrap = document.createElement('div');
+        slotShadowWrap.style.position = 'relative';
+        slotShadowWrap.style.width = '100%';
+        slotShadowWrap.style.height = slotHeightPx + 'px';
+        slotShadowWrap.style.flexShrink = '0';
+        slotShadowWrap.style.marginTop = enterUnit + 'px';
+        slotShadowWrap.style.marginBottom = enterUnit + 'px';
+        slotShadowWrap.style.borderRadius = '12px';
+        slotShadowWrap.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18)';
+
         const slotEl = document.createElement('div');
-        slotEl.style.position = 'relative';
         slotEl.style.width = '100%';
-        slotEl.style.height = slotHeightPx + 'px';
-        slotEl.style.flexShrink = '0';
-        slotEl.style.marginTop = enterUnit + 'px';
-        slotEl.style.marginBottom = enterUnit + 'px';
+        slotEl.style.height = '100%';
         slotEl.style.boxSizing = 'border-box';
         slotEl.style.overflow = 'hidden';
+        slotEl.style.borderRadius = 'inherit';
+        slotShadowWrap.appendChild(slotEl);
 
         if (contentImageDataUrl){
           const aspect = slides[slideIndex] && slides[slideIndex].contentImageAspect;
@@ -1464,7 +1589,7 @@ Aturan wajib lainnya:
         } else if (tokenFrame){
           renderDashedPlaceholder(slotEl);
         }
-        textWrap.appendChild(slotEl);
+        textWrap.appendChild(slotShadowWrap);
         return;
       }
 
@@ -1539,7 +1664,12 @@ Aturan wajib lainnya:
         lineWrap.style.lineHeight = design.line_height || 1.4;
         lineWrap.style.whiteSpace = 'pre-wrap';
         lineWrap.style.wordBreak = 'break-word';
-        lineWrap.style.fontFamily = "'Calibri', sans-serif";
+        // Judul (bukan Arab) pakai Poppins -- font display yang lebih tegas/khas, biar ada
+        // hierarki tipografi berlapis (tidak semua ukuran pakai font yang sama persis).
+        // Teks Arab & body/caption tetap Calibri (yang sudah terbukti aman buat rendering Arab).
+        lineWrap.style.fontFamily = (block.role === 'heading' && !lineIsArabic)
+          ? "'Poppins', 'Calibri', sans-serif"
+          : "'Calibri', sans-serif";
         // PENTING: justify-content di blockRow cuma ngatur posisi ITEM (span) sebagai satu kesatuan,
         // TIDAK ngatur perataan baris-baris hasil wrap DI DALAM span itu sendiri kalau teksnya panjang.
         // Makanya text-align eksplisit wajib di-set di sini juga, supaya teks panjang yang wrap ke
@@ -1779,6 +1909,9 @@ Aturan wajib lainnya:
     fullNode.style.transform = 'none';
     captureSandbox.innerHTML = '';
     captureSandbox.appendChild(fullNode);
+
+    // pastikan font web (Poppins) sudah selesai dimuat sebelum di-capture
+    try { await document.fonts.ready; } catch(e){}
 
     // pastikan semua elemen <img> (mis. gambar konten) SUDAH SELESAI dimuat/decode sebelum
     // di-capture, supaya library punya data gambar utuh saat menyusun SVG snapshot-nya.
