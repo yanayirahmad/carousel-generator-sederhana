@@ -399,6 +399,21 @@
 (function(){
   "use strict";
 
+  // Banner error yang KELIHATAN di layar (bukan cuma di console) -- soalnya kalau ada error JS
+  // yang gagal ke-tangkap, biasanya efeknya SEMUA tombol jadi "diam saja" tanpa reaksi apapun,
+  // dan banyak user tidak sempat/tidak tahu cara buka console browser buat lihat pesan errornya.
+  function showFatalErrorBanner(msg){
+    let banner = document.getElementById('__fatalErrorBanner');
+    if (!banner){
+      banner = document.createElement('div');
+      banner.id = '__fatalErrorBanner';
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;padding:10px 14px;font:13px/1.4 sans-serif;white-space:pre-wrap;';
+      document.body.appendChild(banner);
+    }
+    banner.textContent = '⚠️ Terjadi error JavaScript, tombol mungkin tidak berfungsi: ' + msg;
+  }
+  window.addEventListener('error', (e) => showFatalErrorBanner(e.message + ' (line ' + e.lineno + ')'));
+
   const PREVIEW_WIDTH = 300;   // lebar tampilan preview di layar (px)
   let EXPORT_WIDTH = 1080;
   let EXPORT_HEIGHT = 1350;
@@ -1372,18 +1387,54 @@
     syncRichEditorToTextarea();
   });
 
+  // Modal kecil sendiri (bukan window.prompt) -- window.prompt/alert/confirm sering DIAM-DIAM
+  // diblokir kalau halaman ini dibuka di dalam preview/iframe yang di-sandbox, jadi tombol
+  // "Gambar"/"Spasi" bisa kelihatan "tidak ngapa-ngapain" walau kodenya sebenarnya jalan.
+  function showInlineModal(title, fieldsHtml, onSubmit){
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:9998;display:flex;align-items:center;justify-content:center;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff;border-radius:12px;padding:16px;width:280px;max-width:90vw;font:13px sans-serif;box-shadow:0 10px 30px rgba(0,0,0,0.25);';
+    box.innerHTML = `<div style="font-weight:700;margin-bottom:10px;color:#1e293b;">${title}</div>${fieldsHtml}<div style="display:flex;gap:8px;margin-top:12px;"><button type="button" id="__modalCancel" style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer;">Batal</button><button type="button" id="__modalOk" style="flex:1;padding:8px;border:none;border-radius:8px;background:#4f46e5;color:#fff;font-weight:600;cursor:pointer;">OK</button></div>`;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    box.querySelector('#__modalCancel').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    box.querySelector('#__modalOk').addEventListener('click', () => {
+      onSubmit(box);
+      overlay.remove();
+    });
+    const firstInput = box.querySelector('input, select');
+    if (firstInput) firstInput.focus();
+    return box;
+  }
+
   document.getElementById('richInsertGambarBtn').addEventListener('click', () => {
-    const posInput = (prompt('Posisi gambar? Ketik: bawah, tengah, kiri, atau kanan', 'bawah') || 'bawah').trim().toLowerCase();
-    const pos = ['bawah', 'tengah', 'kiri', 'kanan'].includes(posInput) ? posInput : 'bawah';
-    const pctInput = prompt('Ukuran gambar (persen luas kanvas)?', '35');
-    const pct = parseInt(pctInput, 10) || 35;
-    insertBlockChip(`🖼️ Gambar: ${pos}, ${pct}%`, `[GAMBAR:${pos}:${pct}]`);
+    showInlineModal('Sisip Frame Gambar', `
+      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">Posisi</label>
+      <select id="__mGambarPos" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:6px;margin-bottom:10px;">
+        <option value="bawah">Bawah</option>
+        <option value="tengah">Tengah</option>
+        <option value="kiri">Kiri</option>
+        <option value="kanan">Kanan</option>
+      </select>
+      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">Ukuran (% luas kanvas)</label>
+      <input id="__mGambarPct" type="number" value="35" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:6px;box-sizing:border-box;">
+    `, (box) => {
+      const pos = box.querySelector('#__mGambarPos').value;
+      const pct = parseInt(box.querySelector('#__mGambarPct').value, 10) || 35;
+      insertBlockChip(`🖼️ Gambar: ${pos}, ${pct}%`, `[GAMBAR:${pos}:${pct}]`);
+    });
   });
 
   document.getElementById('richInsertSpasiBtn').addEventListener('click', () => {
-    const pxInput = prompt('Tinggi ruang kosong (px)?', '200');
-    const px = parseInt(pxInput, 10) || 200;
-    insertBlockChip(`↕️ Spasi: ${px}px`, `[SPASI:${px}]`);
+    showInlineModal('Sisip Ruang Kosong', `
+      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">Tinggi (px)</label>
+      <input id="__mSpasiPx" type="number" value="200" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:6px;box-sizing:border-box;">
+    `, (box) => {
+      const px = parseInt(box.querySelector('#__mSpasiPx').value, 10) || 200;
+      insertBlockChip(`↕️ Spasi: ${px}px`, `[SPASI:${px}]`);
+    });
   });
 
   document.getElementById('richInsertSlideBtn').addEventListener('click', () => {
@@ -1756,70 +1807,4 @@ Aturan wajib lainnya:
     return applyDesignOverrides(design, slideIndex);
   }
 
-  // ---------- RENDER SLIDE DOM (full resolution 1080x1350) ----------
-
-  function buildSlideCanvasNode(design, rawText, slideIndex, totalSlides, contentImageDataUrl){
-    const canvas = document.createElement('div');
-    canvas.style.width = EXPORT_WIDTH + 'px';
-    canvas.style.height = EXPORT_HEIGHT + 'px';
-    canvas.style.position = 'relative';
-    canvas.style.overflow = 'hidden';
-    canvas.style.boxSizing = 'border-box';
-    canvas.style.fontFamily = "'Calibri', sans-serif";
-    canvas.dir = 'ltr'; // netral -- arah RTL/LTR ditentukan per-blok teks di bawah, bukan level kanvas
-                         // (supaya elemen UI seperti watermark/dots tidak ikut kebalik kalau ADA blok Arab)
-
-    if (design.background_gradient && design.background_gradient.from && design.background_gradient.to){
-      const dir = design.background_gradient.direction || 'to bottom';
-      canvas.style.background = `linear-gradient(${dir}, ${design.background_gradient.from}, ${design.background_gradient.to})`;
-    } else {
-      canvas.style.backgroundColor = design.background_color || '#ffffff';
-    }
-
-    // ---- dekorasi: circle/rectangle/line (lama) + blob/wave/dots-grid/hand-border (baru) ----
-    // Semua bentuk baru murni CSS/SVG, tidak nambah biaya API sama sekali.
-    // Wobble hand-border pakai pseudo-random SEEDED (bukan Math.random()) supaya hasilnya
-    // identik antara preview & download (desain yang sama = wobble yang sama persis).
-    function seededRandom(seed){
-      const x = Math.sin(seed) * 10000;
-      return (x - Math.floor(x)) * 2 - 1; // -1..1
-    }
-
-    function buildHandDrawnBorderPath(w, h, seed, inset){
-      const jitter = 6;
-      const cols = 6, rows = 8;
-      const pts = [];
-      for (let i = 0; i <= cols; i++){
-        pts.push([inset + (w - 2*inset) * (i/cols) + seededRandom(seed + i) * jitter, inset + seededRandom(seed + i + 50) * jitter]);
-      }
-      for (let i = 1; i <= rows; i++){
-        pts.push([w - inset + seededRandom(seed + i + 100) * jitter, inset + (h - 2*inset) * (i/rows) + seededRandom(seed + i + 150) * jitter]);
-      }
-      for (let i = 1; i <= cols; i++){
-        pts.push([w - inset - (w - 2*inset) * (i/cols) + seededRandom(seed + i + 200) * jitter, h - inset + seededRandom(seed + i + 250) * jitter]);
-      }
-      for (let i = 1; i < rows; i++){
-        pts.push([inset + seededRandom(seed + i + 300) * jitter, h - inset - (h - 2*inset) * (i/rows) + seededRandom(seed + i + 350) * jitter]);
-      }
-      return 'M ' + pts.map(p => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' L ') + ' Z';
-    }
-
-    (design.decorations || []).forEach((dec, decIdx) => {
-      const type = dec.type || 'circle';
-      const decColor = dec.color || (design.accent_color || '#000000');
-      const decOpacity = (dec.opacity != null ? dec.opacity : 0.2);
-
-      if (type === 'blob'){
-        const el = document.createElement('div');
-        el.style.position = 'absolute';
-        el.style.top = (dec.top_pct != null ? dec.top_pct : 0) + '%';
-        el.style.left = (dec.left_pct != null ? dec.left_pct : 0) + '%';
-        el.style.width = (dec.width_px || 160) + 'px';
-        el.style.height = (dec.height_px || dec.width_px || 160) + 'px';
-        el.style.backgroundColor = decColor;
-        el.style.opacity = decOpacity;
-        // border-radius asimetris = trik CSS klasik buat bentuk organik/blob
-        el.style.borderRadius = '62% 38% 55% 45% / 45% 60% 40% 55%';
-        el.style.transform = `rotate(${dec.rotation_deg || 0}deg)`;
-        el.style.pointerEvents = 'none';
-    
+  // ---------- RENDER SLIDE 
