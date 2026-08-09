@@ -13,50 +13,6 @@
   body { font-family: 'Segoe UI', Arial, sans-serif; }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
-  #richEditorMain:empty:before {
-    content: attr(data-placeholder);
-    color: #94a3b8;
-    pointer-events: none;
-  }
-  #richEditorMain p { margin: 0 0 8px 0; }
-  #richEditorMain h2 { font-size: 1.3em; font-weight: 800; margin: 4px 0 8px 0; }
-  #richEditorMain ul, #richEditorMain ol { padding-left: 1.4em; margin: 0 0 8px 0; }
-  #richEditorMain ul[data-list-style="dot"] { list-style: disc; }
-  #richEditorMain ul[data-list-style="square"] { list-style: square; }
-  #richEditorMain ul[data-list-style="check"],
-  #richEditorMain ul[data-list-style="cross"],
-  #richEditorMain ul[data-list-style="arrow"] { list-style: none; }
-  #richEditorMain ul[data-list-style="check"] li::before { content: "✓ "; margin-left: -1.4em; }
-  #richEditorMain ul[data-list-style="cross"] li::before { content: "✗ "; margin-left: -1.4em; }
-  #richEditorMain ul[data-list-style="arrow"] li::before { content: "➤ "; margin-left: -1.4em; }
-  #richEditorMain ol[data-list-style="upper"] { list-style: upper-alpha; }
-  #richEditorMain ol[data-list-style="lower"] { list-style: lower-alpha; }
-  #richEditorMain ol[data-list-style="decimal"], #richEditorMain ol:not([data-list-style]) { list-style: decimal; }
-  .rich-btn.active { background-color: #e0e7ff; color: #4338ca; }
-  .rich-editor-scrollwrap { max-height: 60vh; overflow-y: auto; }
-  .rich-editor-toolbar-sticky { position: sticky; top: 0; z-index: 10; }
-  .adv-editor-scrollwrap { max-height: 320px; overflow-y: auto; }
-  .rich-chip {
-    display: block;
-    margin: 6px 0;
-    padding: 4px 10px;
-    background: #eef2ff;
-    border: 1px solid #c7d2fe;
-    color: #4338ca;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-    width: fit-content;
-    user-select: none;
-  }
-  .rich-chip.slide-break {
-    background: #fef3c7;
-    border-color: #fde68a;
-    color: #92400e;
-    width: 100%;
-    text-align: center;
-    border-radius: 6px;
-  }
   .slide-frame {
     overflow: hidden;
     position: relative;
@@ -93,12 +49,12 @@
     <p class="text-sm text-slate-500 mb-5">Art Director otomatis untuk carousel Instagram (4:5)</p>
 
     <!-- AI PROVIDERS -->
-    <details class="mb-5" open>
-      <summary class="text-sm font-semibold mb-1.5 cursor-pointer select-none">Provider AI</summary>
-      <p class="text-xs text-slate-400 mb-2 mt-1.5">Tambahkan satu atau lebih provider. Urutan dari atas ke bawah = urutan coba (kalau provider paling atas overload/kuota habis, sistem otomatis lanjut ke provider berikutnya). Semua key disimpan hanya di browser Anda (localStorage).</p>
+    <div class="mb-5">
+      <label class="block text-sm font-semibold mb-1.5">Provider AI</label>
+      <p class="text-xs text-slate-400 mb-2">Tambahkan satu atau lebih provider. Urutan dari atas ke bawah = urutan coba (kalau provider paling atas overload/kuota habis, sistem otomatis lanjut ke provider berikutnya). Semua key disimpan hanya di browser Anda (localStorage).</p>
       <div id="providerRows" class="flex flex-col gap-2"></div>
       <button id="addProviderBtn" type="button" class="mt-2 w-full border border-dashed border-slate-300 rounded-lg py-2 text-xs font-semibold text-slate-500 hover:border-indigo-400 hover:text-indigo-500 transition">+ Tambah Provider</button>
-    </details>
+    </div>
 
     <!-- UKURAN SLIDE -->
     <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -158,104 +114,16 @@
       <p class="text-xs text-slate-400 mt-1.5">Berlaku kalau salah satu pilihan "bervariasi" di atas dipilih. Warna ini dipakai TETAP SAMA di semua kata/frasa kunci yang ditonjolkan, supaya hasilnya konsisten (bukan AI pilih warna beda-beda tiap slide).</p>
     </div>
 
-    <!-- WARNA ELEMEN DEKORASI & UI -->
-    <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
-      <label class="block text-sm font-semibold mb-2">Warna Elemen Dekorasi & UI</label>
-      <p class="text-xs text-slate-400 mb-2">Dipakai untuk: dots penanda slide, ikon medsos, tombol panah, dan warna default bentuk dekorasi (lingkaran/garis/dsb).</p>
-      <div class="space-y-1.5">
-        <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-          <input type="radio" name="accentColorMode" value="text" checked class="accent-indigo-600">
-          Ikut warna teks utama (paling konsisten, tidak gonjreng)
-        </label>
-        <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-          <input type="radio" name="accentColorMode" value="variation" class="accent-indigo-600">
-          Ikut warna teks variasi
-        </label>
-        <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-          <input type="radio" name="accentColorMode" value="background" class="accent-indigo-600">
-          Turunan dari background (otomatis gelap/terang)
-        </label>
-      </div>
-      <div id="accentIntensityWrap" class="hidden mt-2">
-        <label class="text-xs text-slate-500 block mb-1">Intensitas turunan (<span id="accentIntensityValue">35</span>%)</label>
-        <input type="range" id="accentIntensitySlider" min="10" max="70" value="35" class="w-full">
-      </div>
-    </div>
-
-    <!-- GRADIENT BACKGROUND -->
-    <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
-      <label class="block text-sm font-semibold mb-2">Frekuensi Gradient Background</label>
-      <div class="space-y-1.5">
-        <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-          <input type="radio" name="gradientMode" value="never" class="accent-indigo-600">
-          Jangan pernah (warna solid saja)
-        </label>
-        <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-          <input type="radio" name="gradientMode" value="sometimes" checked class="accent-indigo-600">
-          Kadang-kadang (AI yang putuskan per slide)
-        </label>
-        <label class="flex items-center gap-2 text-sm border border-slate-300 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-          <input type="radio" name="gradientMode" value="often" class="accent-indigo-600">
-          Sering (mayoritas slide pakai gradient)
-        </label>
-      </div>
-    </div>
-
-    <!-- IKON EMOJI -->
-    <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
-      <label class="flex items-center gap-2 text-sm cursor-pointer">
-        <input type="checkbox" id="enableEmojiIcon" class="accent-indigo-600">
-        Izinkan AI menambahkan ikon emoji otomatis
-      </label>
-      <p class="text-xs text-slate-400 mt-1">Default nonaktif — kalau perlu emoji di slide tertentu, tinggal ketik manual di teks editor.</p>
-    </div>
-
     <!-- TEKS INPUT -->
     <div class="mb-5">
       <label class="block text-sm font-semibold mb-1.5">Konten Teks per Slide</label>
-
-      <div class="rich-editor-scrollwrap border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-indigo-400">
-        <div class="rich-editor-toolbar-sticky flex flex-wrap items-center gap-1 p-1.5 bg-slate-50 border-b border-slate-200">
-          <select id="richStyleSelect" class="border border-slate-300 rounded px-2 py-1 text-xs bg-white">
-            <option value="p">Normal</option>
-            <option value="h2">Judul</option>
-          </select>
-          <span class="w-px h-5 bg-slate-300 mx-1"></span>
-          <button type="button" data-cmd="bold" title="Bold" class="rich-btn w-7 h-7 rounded hover:bg-slate-200 font-bold text-sm">B</button>
-          <button type="button" data-cmd="italic" title="Italic" class="rich-btn w-7 h-7 rounded hover:bg-slate-200 italic text-sm">I</button>
-          <button type="button" data-cmd="underline" title="Underline" class="rich-btn w-7 h-7 rounded hover:bg-slate-200 underline text-sm">U</button>
-          <button type="button" data-cmd="strikeThrough" title="Coret" class="rich-btn w-7 h-7 rounded hover:bg-slate-200 line-through text-sm">S</button>
-          <button type="button" id="richSupBtn" title="Superskrip" class="rich-btn w-7 h-7 rounded hover:bg-slate-200 text-xs">x²</button>
-          <span class="w-px h-5 bg-slate-300 mx-1"></span>
-          <select id="richBulletSelect" title="Bullet List" class="border border-slate-300 rounded px-1 py-1 text-xs bg-white">
-            <option value="">• List ▾</option>
-            <option value="dot">• Bulat</option>
-            <option value="square">▪ Kotak</option>
-            <option value="check">✓ Centang</option>
-            <option value="cross">✗ Silang</option>
-            <option value="arrow">➤ Panah</option>
-          </select>
-          <select id="richNumberSelect" title="Numbered List" class="border border-slate-300 rounded px-1 py-1 text-xs bg-white">
-            <option value="">1. List ▾</option>
-            <option value="decimal">1. Angka</option>
-            <option value="upper">A. Huruf Besar</option>
-            <option value="lower">a. Huruf Kecil</option>
-          </select>
-          <span class="w-px h-5 bg-slate-300 mx-1"></span>
-          <button type="button" id="richInsertGambarBtn" title="Sisip Frame Gambar" class="rich-btn px-2 h-7 rounded hover:bg-slate-200 text-xs">🖼️ Gambar</button>
-          <button type="button" id="richInsertSpasiBtn" title="Sisip Ruang Kosong" class="rich-btn px-2 h-7 rounded hover:bg-slate-200 text-xs">↕️ Spasi</button>
-          <button type="button" id="richInsertSlideBtn" title="Slide Baru" class="rich-btn px-2 h-7 rounded hover:bg-slate-200 text-xs">➗ Slide Baru</button>
-        </div>
-
-        <div id="richEditorMain" contenteditable="true" dir="auto"
-          class="w-full min-h-[220px] px-3 py-2 text-sm focus:outline-none prose-editor"
-          data-placeholder="Ketik slide 1 di sini... klik &quot;Slide Baru&quot; di toolbar buat lanjut ke slide berikutnya."></div>
-      </div>
-      <textarea id="rawTextArea" class="hidden"></textarea>
-
-      <p class="text-xs text-slate-400 mt-1">Klik <b>Slide Baru</b> di toolbar buat mulai slide berikutnya. Pilih <b>Judul</b> di dropdown Style buat baris judul (font 45px bold, dikunci), <b>Normal</b> buat isi teks biasa.</p>
-      <p class="text-xs text-slate-400 mt-1">Teks Arab otomatis terdeteksi per-baris, tidak perlu penanda tambahan.</p>
-      <p class="text-xs text-slate-400 mt-1">Pilih gaya di dropdown <b>• List</b> / <b>1. List</b> buat menerapkan bullet/numbering ke baris/baris terpilih. Nomor otomatis lanjut dari angka terakhir yang dipakai, termasuk lintas slide.</p>
+      <div id="fmt-toolbar-main" class="flex flex-wrap gap-1 mb-1.5"></div>
+      <textarea id="rawTextArea" rows="10" placeholder="Slide 1: teks di sini...&#10;---&#10;Slide 2: teks di sini (bisa Arab: بسم الله الرحمن الرحيم)&#10;---&#10;Slide 3..."
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" dir="auto"></textarea>
+      <p class="text-xs text-slate-400 mt-1">Pisahkan tiap slide dengan baris berisi <code class="bg-slate-100 px-1 rounded">---</code></p>
+      <p class="text-xs text-slate-400 mt-1">Tip: ketik <code class="bg-slate-100 px-1 rounded">[JUDUL]</code> / <code class="bg-slate-100 px-1 rounded">[ISI]</code> di baris sendiri buat menandai role teks secara pasti (font Judul=45px bold, Isi=35px) — tidak perlu AI menebak lagi mana judul mana isi.</p>
+      <p class="text-xs text-slate-400 mt-1">Tip: ketik <code class="bg-slate-100 px-1 rounded">[SPASI]</code> atau <code class="bg-slate-100 px-1 rounded">[SPASI:300]</code> di baris sendiri buat kasih ruang kosong (misal buat nempel gambar manual nanti).</p>
+      <p class="text-xs text-slate-400 mt-1">Tip: ketik <code class="bg-slate-100 px-1 rounded">[GAMBAR]</code> atau <code class="bg-slate-100 px-1 rounded">[GAMBAR:bawah:40]</code> di baris sendiri buat pesan frame gambar dari awal (posisi: atas/bawah/kiri/kanan, angka = persen luas kanvas). Upload gambarnya nanti lewat tombol 🖼️ di kartu slide setelah generate — otomatis pas ke frame, gratis tanpa panggil API lagi.</p>
     </div>
 
     <!-- STYLING MANUAL -->
@@ -365,6 +233,14 @@
       <p class="text-xs text-slate-400 mt-1.5">"Sekaligus" jauh lebih hemat kuota harian, tapi kalau gagal/kepotong, SEMUA slide gagal bareng (bukan cuma 1). Lebih aman dipakai buat slide full teks; kalau ada gambar, "Per-Slide" lebih disarankan.</p>
     </div>
 
+    <!-- RTL TOGGLE -->
+    <div class="mb-5">
+      <label class="flex items-center gap-2 text-sm">
+        <input id="forceRtl" type="checkbox" class="rounded">
+        Paksa RTL untuk semua slide (default: deteksi otomatis dari teks Arab)
+      </label>
+    </div>
+
     <button id="generateBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-sm shadow-sm transition flex items-center justify-center gap-2">
       ✨ Generate Semua Slide
     </button>
@@ -399,21 +275,6 @@
 (function(){
   "use strict";
 
-  // Banner error yang KELIHATAN di layar (bukan cuma di console) -- soalnya kalau ada error JS
-  // yang gagal ke-tangkap, biasanya efeknya SEMUA tombol jadi "diam saja" tanpa reaksi apapun,
-  // dan banyak user tidak sempat/tidak tahu cara buka console browser buat lihat pesan errornya.
-  function showFatalErrorBanner(msg){
-    let banner = document.getElementById('__fatalErrorBanner');
-    if (!banner){
-      banner = document.createElement('div');
-      banner.id = '__fatalErrorBanner';
-      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;padding:10px 14px;font:13px/1.4 sans-serif;white-space:pre-wrap;';
-      document.body.appendChild(banner);
-    }
-    banner.textContent = '⚠️ Terjadi error JavaScript, tombol mungkin tidak berfungsi: ' + msg;
-  }
-  window.addEventListener('error', (e) => showFatalErrorBanner(e.message + ' (line ' + e.lineno + ')'));
-
   const PREVIEW_WIDTH = 300;   // lebar tampilan preview di layar (px)
   let EXPORT_WIDTH = 1080;
   let EXPORT_HEIGHT = 1350;
@@ -443,8 +304,6 @@
   const providerRows = document.getElementById('providerRows');
   const addProviderBtn = document.getElementById('addProviderBtn');
   const rawTextArea = document.getElementById('rawTextArea');
-  const richEditorMain = document.getElementById('richEditorMain');
-  const richStyleSelect = document.getElementById('richStyleSelect');
   const generateBtn = document.getElementById('generateBtn');
   const downloadAllBtn = document.getElementById('downloadAllBtn');
   const slidesContainer = document.getElementById('slidesContainer');
@@ -461,25 +320,13 @@
   const useManualColors = document.getElementById('useManualColors');
   const variationTextColor = document.getElementById('variationTextColor');
   const variationTextColorHex = document.getElementById('variationTextColorHex');
-  const accentIntensityWrap = document.getElementById('accentIntensityWrap');
-  const accentIntensitySlider = document.getElementById('accentIntensitySlider');
-  const accentIntensityValue = document.getElementById('accentIntensityValue');
-  const enableEmojiIcon = document.getElementById('enableEmojiIcon');
-
-  document.querySelectorAll('input[name="accentColorMode"]').forEach(r => {
-    r.addEventListener('change', () => {
-      accentIntensityWrap.classList.toggle('hidden', r.value !== 'background' || !r.checked);
-    });
-  });
-  accentIntensitySlider.addEventListener('input', () => {
-    accentIntensityValue.textContent = accentIntensitySlider.value;
-  });
 
   const dropZone = document.getElementById('dropZone');
   const dropZoneText = document.getElementById('dropZoneText');
   const sampleImgInput = document.getElementById('sampleImgInput');
   const sampleImgPreview = document.getElementById('sampleImgPreview');
   const removeSampleBtn = document.getElementById('removeSampleBtn');
+  const forceRtl = document.getElementById('forceRtl');
   const watermarkInput = document.getElementById('watermarkInput');
   const watermarkPositionSelect = document.getElementById('watermarkPositionSelect');
   const wmPlatformInstagram = document.getElementById('wmPlatformInstagram');
@@ -686,39 +533,6 @@
   // Baca centang platform + input nama, tentukan mode tampilan watermark:
   // 'dot' (tanpa platform, pakai titik aksen), 'combined' (nama sama, ikon digabung 1 nama),
   // atau 'pairs' (nama beda-beda, tiap ikon dapat nama sendiri).
-  // ---- MATEMATIKA WARNA (buat opsi "Turunan dari background") ----
-  function hexToRgb(hex){
-    hex = (hex || '#000000').replace('#', '');
-    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-    const num = parseInt(hex, 16) || 0;
-    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
-  }
-  function rgbToHex(r, g, b){
-    return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
-  }
-  function shadeColor(hex, amountPct, direction){
-    const { r, g, b } = hexToRgb(hex);
-    const f = amountPct / 100;
-    if (direction === 'lighten') return rgbToHex(r + (255 - r) * f, g + (255 - g) * f, b + (255 - b) * f);
-    return rgbToHex(r * (1 - f), g * (1 - f), b * (1 - f));
-  }
-  // Turunan warna aksen dari background: kalau background terang -> digelapkan, kalau gelap -> diterangkan,
-  // supaya aksennya tetap kebaca jelas di atas background apapun, tanpa perlu warna baru yang "asing".
-  function computeAccentFromBackground(bgHex, intensityPct){
-    const rgb = hexToRgb(bgHex);
-    const luminance = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
-    return luminance > 140 ? shadeColor(bgHex, intensityPct, 'darken') : shadeColor(bgHex, intensityPct, 'lighten');
-  }
-  // Hitung accent_color final sesuai mode yang dipilih user di sidebar -- ini OVERRIDE, bukan
-  // saran ke AI, supaya elemen dekorasi/UI (dots, ikon, panah) selalu konsisten & tidak "gonjreng".
-  function resolveAccentColor(design){
-    const mode = document.querySelector('input[name="accentColorMode"]:checked').value;
-    if (mode === 'text') return design.text_color || '#111111';
-    if (mode === 'variation') return variationTextColorHex.value || design.text_color || '#111111';
-    const intensity = parseInt(accentIntensitySlider.value, 10) || 35;
-    return computeAccentFromBackground(design.background_color || '#ffffff', intensity);
-  }
-
   function getWatermarkConfig(){
     const defaultName = (watermarkInput.value || '').trim();
     const platformDefs = [
@@ -996,58 +810,6 @@
     return null;
   }
 
-  // ---- HELPER LIST (dipakai editor utama & editor lanjutan, biar nomor bisa "lanjut otomatis") ----
-  const BULLET_PREFIX = { dot: '- ', square: '[]- ', check: '[v]- ', cross: '[x]- ', arrow: '[>]- ' };
-
-  // Ubah index 0-based jadi huruf a/b/c...z/aa/ab... (atau versi kapital kalau upper=true).
-  function indexToLetter(i, upper){
-    let n = i + 1;
-    let s = '';
-    while (n > 0){
-      const rem = (n - 1) % 26;
-      s = String.fromCharCode(97 + rem) + s;
-      n = Math.floor((n - 1) / 26);
-    }
-    return upper ? s.toUpperCase() : s;
-  }
-  function letterToIndex1Based(letter){
-    let n = 0;
-    const lower = letter.toLowerCase();
-    for (let i = 0; i < lower.length; i++){
-      n = n * 26 + (lower.charCodeAt(i) - 96);
-    }
-    return n;
-  }
-  function classifyNumberStyle(label){
-    if (/^\d+$/.test(label)) return 'decimal';
-    if (/^[A-Z]+$/.test(label)) return 'upper';
-    if (/^[a-z]+$/.test(label)) return 'lower';
-    return null;
-  }
-  function labelToNumber(label){
-    if (/^\d+$/.test(label)) return parseInt(label, 10);
-    return letterToIndex1Based(label);
-  }
-  // Cari nomor list TERAKHIR (dengan gaya yang sama: decimal/upper/lower) di suatu teks polos
-  // (dipisah baris) -- dipakai supaya nomor baru bisa "lanjut" bukan selalu mulai dari 1 lagi.
-  function lastNumberInPlainText(text, style){
-    if (!text) return null;
-    const lines = text.split(/\r?\n/);
-    let last = null;
-    lines.forEach(line => {
-      const m = extractListMarker(line);
-      if (m && m.type === 'number' && classifyNumberStyle(m.label) === style) last = labelToNumber(m.label);
-    });
-    return last;
-  }
-  function listItemPrefix(tag, style, index, startNum){
-    if (tag === 'ul') return BULLET_PREFIX[style] || BULLET_PREFIX.dot;
-    const n = (startNum || 1) + index;
-    if (style === 'upper') return indexToLetter(n - 1, true) + '. ';
-    if (style === 'lower') return indexToLetter(n - 1, false) + '. ';
-    return n + '. ';
-  }
-
   // ---- TOOLBAR FORMAT TEKS (tombol -> sisipkan penanda ke textarea yang jadi target) ----
   function wrapSelection(textareaEl, before, after){
     const start = textareaEl.selectionStart;
@@ -1079,37 +841,19 @@
     { label: 'U', title: 'Underline (__teks__)', cls: 'underline', action: (ta) => wrapSelection(ta, '__') },
     { label: 'S', title: 'Coret (~~teks~~)', cls: 'line-through', action: (ta) => wrapSelection(ta, '~~') },
     { label: 'x²', title: 'Superskrip (^teks^)', cls: '', action: (ta) => wrapSelection(ta, '^') },
-    { label: '• List', title: 'Bullet bulat', cls: '', action: (ta) => insertAtLineStart(ta, BULLET_PREFIX.dot) },
-    { label: '▪ List', title: 'Bullet kotak', cls: '', action: (ta) => insertAtLineStart(ta, BULLET_PREFIX.square) },
-    { label: '✓ List', title: 'Bullet centang', cls: '', action: (ta) => insertAtLineStart(ta, BULLET_PREFIX.check) },
-    { label: '✗ List', title: 'Bullet silang', cls: '', action: (ta) => insertAtLineStart(ta, BULLET_PREFIX.cross) },
-    { label: '➤ List', title: 'Bullet panah kanan', cls: '', action: (ta) => insertAtLineStart(ta, BULLET_PREFIX.arrow) },
-    { label: '1. List', title: 'Numbering angka (lanjut otomatis dari nomor terakhir)', cls: '', action: (ta, si) => insertAtLineStart(ta, computeNextNumberForTextarea(ta, 'decimal', si) + '. ') },
-    { label: 'A. List', title: 'Numbering huruf besar (lanjut otomatis)', cls: '', action: (ta, si) => insertAtLineStart(ta, indexToLetter(computeNextNumberForTextarea(ta, 'upper', si) - 1, true) + '. ') },
-    { label: 'a. List', title: 'Numbering huruf kecil (lanjut otomatis)', cls: '', action: (ta, si) => insertAtLineStart(ta, indexToLetter(computeNextNumberForTextarea(ta, 'lower', si) - 1, false) + '. ') },
+    { label: '• List', title: 'Bullet bulat', cls: '', action: (ta) => insertAtLineStart(ta, '- ') },
+    { label: '▪ List', title: 'Bullet kotak', cls: '', action: (ta) => insertAtLineStart(ta, '[]- ') },
+    { label: '✓ List', title: 'Bullet centang', cls: '', action: (ta) => insertAtLineStart(ta, '[v]- ') },
+    { label: '✗ List', title: 'Bullet silang', cls: '', action: (ta) => insertAtLineStart(ta, '[x]- ') },
+    { label: '➤ List', title: 'Bullet panah kanan', cls: '', action: (ta) => insertAtLineStart(ta, '[>]- ') },
+    { label: '1. List', title: 'Numbering angka (1,2,3)', cls: '', action: (ta) => insertAtLineStart(ta, '1. ') },
+    { label: 'A. List', title: 'Numbering huruf besar (A,B,C)', cls: '', action: (ta) => insertAtLineStart(ta, 'A. ') },
+    { label: 'a. List', title: 'Numbering huruf kecil (a,b,c)', cls: '', action: (ta) => insertAtLineStart(ta, 'a. ') },
     { label: '[JUDUL]', title: 'Tandai baris berikut sebagai Judul (45px bold)', cls: 'text-indigo-600', action: (ta) => insertAtLineStart(ta, '[JUDUL]\n') },
     { label: '[ISI]', title: 'Tandai baris berikut sebagai Isi (35px normal)', cls: 'text-indigo-600', action: (ta) => insertAtLineStart(ta, '[ISI]\n') }
   ];
 
-  // Cari nomor terakhir yang relevan buat "lanjut otomatis" di editor lanjutan: cek dulu baris-baris
-  // SEBELUM posisi kursor di textarea slide ini, kalau tidak ketemu, tengok mundur ke rawText
-  // slide-slide SEBELUMNYA (biar nomor tetap nyambung walau pindah/ganti slide).
-  function computeNextNumberForTextarea(textareaEl, style, slideIndex){
-    const cursorPos = textareaEl.selectionStart;
-    const beforeCursor = textareaEl.value.slice(0, cursorPos);
-    let last = lastNumberInPlainText(beforeCursor, style);
-    if (last === null && typeof slideIndex === 'number'){
-      for (let i = slideIndex - 1; i >= 0; i--){
-        const prevText = slides[i] && slides[i].rawText;
-        if (!prevText) continue;
-        const found = lastNumberInPlainText(prevText, style);
-        if (found !== null){ last = found; break; }
-      }
-    }
-    return (last || 0) + 1;
-  }
-
-  function renderFormatToolbar(containerEl, textareaEl, slideIndex){
+  function renderFormatToolbar(containerEl, textareaEl){
     containerEl.innerHTML = '';
     FORMAT_TOOLBAR_BUTTONS.forEach(btn => {
       const el = document.createElement('button');
@@ -1117,337 +861,16 @@
       el.title = btn.title;
       el.textContent = btn.label;
       el.className = `px-2 py-1 text-[11px] border border-slate-300 rounded hover:bg-slate-100 ${btn.cls}`;
-      el.addEventListener('click', () => btn.action(textareaEl, slideIndex));
+      el.addEventListener('click', () => btn.action(textareaEl));
       containerEl.appendChild(el);
     });
   }
-
-  // ================= RICH EDITOR UTAMA (WYSIWYG) =================
-  // Editor contenteditable ini murni LAPISAN TAMPILAN -- tiap perubahan langsung diterjemahkan
-  // (serialize) jadi teks+sintaks lama kita (**bold**, [JUDUL], [GAMBAR:...], dst) dan disimpan
-  // ke #rawTextArea (hidden). SEMUA kode lain (parseSlidesFromText, generate, dst) tetap baca
-  // dari rawTextArea.value seperti biasa -- tidak ada yang berubah di sistem inti, jadi resiko
-  // minimal walau tampilannya sekarang WYSIWYG beneran.
-
-  function inlineNodeToTokenText(node){
-    let result = '';
-    node.childNodes.forEach(child => {
-      if (child.nodeType === Node.TEXT_NODE){ result += child.textContent; return; }
-      if (child.nodeType !== Node.ELEMENT_NODE) return;
-      const tag = child.tagName.toLowerCase();
-      if (tag === 'br'){ result += '\n'; return; }
-      let inner = inlineNodeToTokenText(child);
-      if (!inner) return;
-      if (tag === 'strong' || tag === 'b') inner = `**${inner}**`;
-      else if (tag === 'em' || tag === 'i') inner = `*${inner}*`;
-      else if (tag === 'u') inner = `__${inner}__`;
-      else if (tag === 's' || tag === 'strike' || tag === 'del') inner = `~~${inner}~~`;
-      else if (tag === 'sup') inner = `^${inner}^`;
-      result += inner;
-    });
-    return result;
-  }
-
-  // Jaga supaya richEditorMain SELALU berisi elemen blok (<p>/<h2>/<ul>/<ol>/chip), tidak pernah
-  // ada teks "lepas" langsung sebagai anak richEditorMain -- soalnya serializeRichEditor &
-  // setListForSelection cuma baca `.children` (elemen), teks lepas begitu saja HILANG/terlewat
-  // dari hasil (ini akar salah satu bug "bullet & teks hilang pas generate pertama kali": baris
-  // PERTAMA yang diketik di editor kosong biasanya jadi teks lepas tanpa pembungkus <p>).
-  // Node teks yang sama tetap dipertahankan (cuma dipindah ke pembungkus baru), jadi posisi
-  // kursor/selection yang lagi aktif tidak ikut rusak.
-  function ensureBlockWrapping(){
-    if (richEditorMain.childNodes.length === 0){
-      const p = document.createElement('p');
-      p.innerHTML = '<br>';
-      richEditorMain.appendChild(p);
-      return;
-    }
-    Array.from(richEditorMain.childNodes).forEach(node => {
-      if (node.nodeType === Node.TEXT_NODE){
-        const p = document.createElement('p');
-        richEditorMain.insertBefore(p, node);
-        p.appendChild(node);
-      }
-    });
-  }
-
-  function serializeRichEditor(){
-    ensureBlockWrapping();
-    const lines = [];
-    let mode = null; // null | 'JUDUL' | 'ISI'
-
-    Array.from(richEditorMain.children).forEach(block => {
-      if (block.dataset && block.dataset.chipToken){
-        lines.push('', block.dataset.chipToken, '');
-        return;
-      }
-      const tag = block.tagName.toLowerCase();
-
-      if (tag === 'h2'){
-        if (mode !== 'JUDUL'){ lines.push('[JUDUL]'); mode = 'JUDUL'; }
-        const t = inlineNodeToTokenText(block).trim();
-        if (t) lines.push(t);
-        return;
-      }
-      if (tag === 'ul' || tag === 'ol'){
-        if (mode !== 'ISI'){ lines.push('[ISI]'); mode = 'ISI'; }
-        const style = block.dataset.listStyle || (tag === 'ul' ? 'dot' : 'decimal');
-        const startNum = tag === 'ol' ? (parseInt(block.getAttribute('start'), 10) || 1) : 1;
-        Array.from(block.children).forEach((li, i) => {
-          const prefix = listItemPrefix(tag, style, i, startNum);
-          const t = inlineNodeToTokenText(li).trim();
-          if (t) lines.push(prefix + t);
-        });
-        return;
-      }
-      // paragraf normal
-      const t = inlineNodeToTokenText(block).trim();
-      if (!t) return; // baris kosong dilewati, tidak perlu jadi [ISI] kosong
-      if (mode !== 'ISI'){ lines.push('[ISI]'); mode = 'ISI'; }
-      lines.push(t);
-    });
-
-    // gabung jadi teks final, "---" (chip slide-break) sudah otomatis ke-insert di atas
-    return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  }
-
-  function syncRichEditorToTextarea(){
-    rawTextArea.value = serializeRichEditor();
-  }
-
-  function insertBlockChip(chipLabel, tokenText, isSlideBreak){
-    richEditorMain.focus();
-    const chip = document.createElement('div');
-    chip.contentEditable = 'false';
-    chip.dataset.chipToken = tokenText;
-    chip.className = 'rich-chip' + (isSlideBreak ? ' slide-break' : '');
-    chip.textContent = chipLabel;
-    richEditorMain.appendChild(chip);
-    const p = document.createElement('p');
-    p.innerHTML = '<br>';
-    richEditorMain.appendChild(p);
-    // taruh cursor di paragraf baru setelah chip
-    const range = document.createRange();
-    range.setStart(p, 0);
-    range.collapse(true);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-    syncRichEditorToTextarea();
-  }
-
-  // Cari direct-child dari richEditorMain yang memuat sebuah node (dipakai buat nentuin
-  // "baris/blok" mana yang lagi dipilih user, biar toggle list-nya presisi).
-  function topLevelBlockOf(node){
-    if (!node) return null;
-    if (node.nodeType === Node.TEXT_NODE) node = node.parentNode;
-    if (!node || node === richEditorMain) return null;
-    while (node.parentNode && node.parentNode !== richEditorMain){
-      node = node.parentNode;
-    }
-    return node.parentNode === richEditorMain ? node : null;
-  }
-
-  // Cari nomor terakhir (gaya sama) dari SEMUA <ol> sebelum posisi index tertentu di editor utama --
-  // SENGAJA tidak berhenti di blok non-list di antaranya (paragraf/chip slide baru dilewati begitu
-  // saja), supaya numbering tetap "nyambung" walau diselingi teks lain / ganti slide.
-  function lastNumberBeforeIndex(beforeIdx, style){
-    const blocks = Array.from(richEditorMain.children);
-    let last = null;
-    for (let idx = 0; idx < beforeIdx; idx++){
-      const b = blocks[idx];
-      if (!b.tagName) continue;
-      if (b.tagName.toLowerCase() === 'ol' && (b.dataset.listStyle || 'decimal') === style){
-        const start = parseInt(b.getAttribute('start'), 10) || 1;
-        last = start + b.children.length - 1;
-      }
-    }
-    return last;
-  }
-
-  // Terapkan/lepas bullet atau numbering ke baris (atau beberapa baris terpilih) di editor utama.
-  // kind: 'bullet' | 'number', style: lihat BULLET_PREFIX / 'decimal'|'upper'|'lower'.
-  function setListForSelection(kind, style){
-    richEditorMain.focus();
-    ensureBlockWrapping();
-    const sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    const range = sel.getRangeAt(0);
-    const startBlock = topLevelBlockOf(range.startContainer);
-    const endBlock = topLevelBlockOf(range.endContainer);
-    if (!startBlock || !endBlock) return;
-
-    const allBlocks = Array.from(richEditorMain.children);
-    let startIdx = allBlocks.indexOf(startBlock);
-    let endIdx = allBlocks.indexOf(endBlock);
-    if (startIdx === -1 || endIdx === -1) return;
-    if (startIdx > endIdx) [startIdx, endIdx] = [endIdx, startIdx];
-
-    const targetBlocks = allBlocks.slice(startIdx, endIdx + 1).filter(b => !(b.dataset && b.dataset.chipToken));
-    if (targetBlocks.length === 0) return;
-
-    const wantTag = kind === 'bullet' ? 'ul' : 'ol';
-    const alreadySame = targetBlocks.every(b => b.tagName.toLowerCase() === wantTag && b.dataset.listStyle === style);
-
-    // Pecah target jadi daftar "item" per baris (kalau sebelumnya sudah list, pecah per <li>;
-    // kalau bukan, satu blok = satu item) supaya bisa dibungkus ulang jadi satu list baru.
-    const items = [];
-    targetBlocks.forEach(b => {
-      const tag = b.tagName.toLowerCase();
-      if (tag === 'ul' || tag === 'ol'){
-        Array.from(b.children).forEach(li => items.push(li.innerHTML));
-      } else {
-        items.push(b.innerHTML || '');
-      }
-    });
-
-    const frag = document.createDocumentFragment();
-    if (alreadySame){
-      // toggle OFF: kembalikan tiap item jadi paragraf biasa
-      items.forEach(html => {
-        const p = document.createElement('p');
-        p.innerHTML = html && html !== '<br>' ? html : '<br>';
-        frag.appendChild(p);
-      });
-    } else {
-      const listEl = document.createElement(wantTag);
-      listEl.dataset.listStyle = style;
-      if (wantTag === 'ol'){
-        const priorLast = lastNumberBeforeIndex(startIdx, style);
-        listEl.setAttribute('start', String((priorLast || 0) + 1));
-      }
-      items.forEach(html => {
-        const li = document.createElement('li');
-        li.innerHTML = html && html !== '<br>' ? html : '<br>';
-        listEl.appendChild(li);
-      });
-      frag.appendChild(listEl);
-    }
-
-    const lastNewNode = frag.lastChild;
-    richEditorMain.insertBefore(frag, targetBlocks[0]);
-    targetBlocks.forEach(b => b.remove());
-
-    if (lastNewNode){
-      const caretRange = document.createRange();
-      caretRange.selectNodeContents(lastNewNode);
-      caretRange.collapse(false);
-      sel.removeAllRanges();
-      sel.addRange(caretRange);
-    }
-    syncRichEditorToTextarea();
-  }
-
-  function updateToolbarActiveState(){
-    ['bold', 'italic', 'underline', 'strikeThrough'].forEach(cmd => {
-      const btn = document.querySelector(`.rich-btn[data-cmd="${cmd}"]`);
-      if (!btn) return;
-      let active = false;
-      try { active = document.queryCommandState(cmd); } catch(e){}
-      btn.classList.toggle('active', active);
-    });
-  }
-
-  ensureBlockWrapping(); // pastikan ada <p><br></p> awal, biar karakter pertama yang diketik tidak jadi teks lepas
-  richEditorMain.addEventListener('input', syncRichEditorToTextarea);
-  richEditorMain.addEventListener('keyup', updateToolbarActiveState);
-  richEditorMain.addEventListener('mouseup', updateToolbarActiveState);
-
-  document.querySelectorAll('.rich-btn[data-cmd]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      richEditorMain.focus();
-      document.execCommand(btn.dataset.cmd, false, null);
-      syncRichEditorToTextarea();
-      updateToolbarActiveState();
-    });
-  });
-
-  richStyleSelect.addEventListener('change', () => {
-    richEditorMain.focus();
-    document.execCommand('formatBlock', false, richStyleSelect.value === 'h2' ? 'H2' : 'P');
-    syncRichEditorToTextarea();
-  });
-
-  const richBulletSelect = document.getElementById('richBulletSelect');
-  const richNumberSelect = document.getElementById('richNumberSelect');
-  richBulletSelect.addEventListener('change', () => {
-    if (!richBulletSelect.value) return;
-    setListForSelection('bullet', richBulletSelect.value);
-    richBulletSelect.value = '';
-  });
-  richNumberSelect.addEventListener('change', () => {
-    if (!richNumberSelect.value) return;
-    setListForSelection('number', richNumberSelect.value);
-    richNumberSelect.value = '';
-  });
-
-  document.getElementById('richSupBtn').addEventListener('click', () => {
-    richEditorMain.focus();
-    document.execCommand('superscript', false, null);
-    syncRichEditorToTextarea();
-  });
-
-  // Modal kecil sendiri (bukan window.prompt) -- window.prompt/alert/confirm sering DIAM-DIAM
-  // diblokir kalau halaman ini dibuka di dalam preview/iframe yang di-sandbox, jadi tombol
-  // "Gambar"/"Spasi" bisa kelihatan "tidak ngapa-ngapain" walau kodenya sebenarnya jalan.
-  function showInlineModal(title, fieldsHtml, onSubmit){
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:9998;display:flex;align-items:center;justify-content:center;';
-    const box = document.createElement('div');
-    box.style.cssText = 'background:#fff;border-radius:12px;padding:16px;width:280px;max-width:90vw;font:13px sans-serif;box-shadow:0 10px 30px rgba(0,0,0,0.25);';
-    box.innerHTML = `<div style="font-weight:700;margin-bottom:10px;color:#1e293b;">${title}</div>${fieldsHtml}<div style="display:flex;gap:8px;margin-top:12px;"><button type="button" id="__modalCancel" style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer;">Batal</button><button type="button" id="__modalOk" style="flex:1;padding:8px;border:none;border-radius:8px;background:#4f46e5;color:#fff;font-weight:600;cursor:pointer;">OK</button></div>`;
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
-    box.querySelector('#__modalCancel').addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-    box.querySelector('#__modalOk').addEventListener('click', () => {
-      onSubmit(box);
-      overlay.remove();
-    });
-    const firstInput = box.querySelector('input, select');
-    if (firstInput) firstInput.focus();
-    return box;
-  }
-
-  document.getElementById('richInsertGambarBtn').addEventListener('click', () => {
-    showInlineModal('Sisip Frame Gambar', `
-      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">Posisi</label>
-      <select id="__mGambarPos" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:6px;margin-bottom:10px;">
-        <option value="bawah">Bawah</option>
-        <option value="tengah">Tengah</option>
-        <option value="kiri">Kiri</option>
-        <option value="kanan">Kanan</option>
-      </select>
-      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">Ukuran (% luas kanvas)</label>
-      <input id="__mGambarPct" type="number" value="35" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:6px;box-sizing:border-box;">
-    `, (box) => {
-      const pos = box.querySelector('#__mGambarPos').value;
-      const pct = parseInt(box.querySelector('#__mGambarPct').value, 10) || 35;
-      insertBlockChip(`🖼️ Gambar: ${pos}, ${pct}%`, `[GAMBAR:${pos}:${pct}]`);
-    });
-  });
-
-  document.getElementById('richInsertSpasiBtn').addEventListener('click', () => {
-    showInlineModal('Sisip Ruang Kosong', `
-      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">Tinggi (px)</label>
-      <input id="__mSpasiPx" type="number" value="200" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:6px;box-sizing:border-box;">
-    `, (box) => {
-      const px = parseInt(box.querySelector('#__mSpasiPx').value, 10) || 200;
-      insertBlockChip(`↕️ Spasi: ${px}px`, `[SPASI:${px}]`);
-    });
-  });
-
-  document.getElementById('richInsertSlideBtn').addEventListener('click', () => {
-    insertBlockChip('— Slide Baru —', '---', true);
-  });
 
   // ---------- SYSTEM PROMPT ----------
   function buildSystemPrompt(allowColorEmphasis, batchCount){
     const ratioLabel = EXPORT_WIDTH === EXPORT_HEIGHT ? '1:1 (persegi)' : '4:5 (vertikal)';
     const variationColorHex = variationTextColorHex.value || '#6366f1';
     const isBatch = batchCount && batchCount > 1;
-    const gradientMode = document.querySelector('input[name="gradientMode"]:checked').value;
-    const emojiAllowed = enableEmojiIcon.checked;
     return `Anda adalah seorang Art Director & Graphic Designer profesional yang mendesain slide carousel Instagram berukuran ${EXPORT_WIDTH}x${EXPORT_HEIGHT}px (rasio ${ratioLabel}), dengan gaya editorial modern (mirip desain carousel edukasi/motivasi populer: tipografi berlapis, ada penekanan visual, tidak monoton).
 Kanvas kali ini berukuran ${EXPORT_WIDTH}x${EXPORT_HEIGHT}px. Sesuaikan ukuran font, padding, dan jumlah/ukuran dekorasi dengan proporsi kanvas ini (kanvas ${ratioLabel === '1:1 (persegi)' ? 'lebih pendek dari versi vertikal, jadi hindari memaksakan terlalu banyak blok teks berukuran besar agar tidak overflow' : 'cukup tinggi untuk hierarki teks yang lebih leluasa'}).
 ${isBatch
@@ -1504,9 +927,7 @@ Aturan wajib untuk "content_blocks" (INI KUNCI UTAMA agar desain terasa modern, 
 1. WAJIB memecah teks asli slide menjadi BEBERAPA blok terpisah (minimal 2 blok jika teks cukup panjang, boleh 1 blok jika teks sangat pendek seperti satu kata). JANGAN mengubah, menambah, atau menghilangkan kata dari teks asli — hanya memecahnya per kalimat/frasa/kata kunci. Gabungan seluruh "text" di semua blok harus tetap merepresentasikan teks asli secara utuh dan berurutan. PENTING: kalau teks asli mengandung penanda seperti "**kata**", "*kata*", "__kata__", "~~kata~~", "^kata^", atau baris berawalan "- " / "1. " — itu PENANDA FORMAT (bold/italic/underline/coret/superskrip/list) yang diproses terpisah oleh sistem kami, BUKAN typo. WAJIB pertahankan penanda itu PERSIS apa adanya di dalam "text", jangan dihapus/diubah/dirapikan.
 2. "role" salah satu dari "heading" (judul/kata kunci paling penting -- ukuran font DIKUNCI 45px, bold), "subheading" (poin penting kedua, 36-48px, bold/semibold), "body" (isi/penjelasan -- ukuran font DIKUNCI 35px, normal), atau "caption" (catatan kecil/sumber/tambahan, 18-24px, normal). Catatan: ukuran font_size_px yang kamu isi untuk role "heading"/"body" akan DIABAIKAN dan diganti paksa 45px/35px oleh sistem, KECUALI baris yang berisi huruf Arab -- baris tsb selalu dikunci 55px & TIDAK PERNAH bold apa pun role-nya -- jadi untuk role tsb isi angka berapa pun, cukup fokus ke pemilihan role & susunan kalimat yang tepat.
 3. Untuk teks yang panjang (lebih dari satu kalimat), SELALU coba temukan 1 kata atau frasa pendek yang paling penting untuk dijadikan blok "heading" tersendiri agar ada hierarki visual — penekanan ini WAJIB dilakukan lewat ukuran font & ketebalan (font_size_px & font_weight berbeda per role), JANGAN jadikan semua teks dalam satu blok "body" datar dengan ukuran seragam.
-4. "icon": ${emojiAllowed
-  ? `isi dengan SATU emoji yang relevan secara makna sebagai ilustrasi sederhana pendamping teks (opsional, gunakan pada maksimal 1-2 blok yang paling cocok, isi null jika tidak relevan). Jangan paksakan emoji jika tidak ada yang benar-benar relevan.`
-  : `WAJIB isi null untuk SEMUA blok tanpa terkecuali -- JANGAN tambahkan emoji apapun (user mematikan fitur ini, kalau perlu emoji mereka akan tambahkan manual sendiri).`}
+4. "icon": isi dengan SATU emoji yang relevan secara makna sebagai ilustrasi sederhana pendamping teks (opsional, gunakan pada maksimal 1-2 blok yang paling cocok, isi null jika tidak relevan). Jangan paksakan emoji jika tidak ada yang benar-benar relevan.
 5. Urutan array "content_blocks" merepresentasikan urutan tampil dari atas ke bawah (atau kanan ke kiri urutan logis jika is_rtl true).
 6. Kalau di teks asli ada baris yang PERSIS berisi token "[SPASI]" atau "[SPASI:angka]" (contoh: "[SPASI:300]") — ini BUKAN bagian dari kalimat, JANGAN dianggap teks biasa dan JANGAN ditampilkan sebagai teks. Ubah jadi SATU content_block khusus dengan format: {"text": "", "role": "spacer", "spacer_height_px": angka_dari_token_atau_200_jika_tidak_ada_angka, "font_size_px": 0, "font_weight": "normal", "color": null, "icon": null}. Blok ini akan dirender sebagai ruang kosong vertikal (biasanya dipakai user untuk menempel gambar sendiri secara manual di luar aplikasi, misalnya lewat Canva). Pertahankan posisi token ini persis sesuai urutan aslinya di antara blok-blok teks lain, jangan dipindah-pindah.
 6b. Kalau di teks asli ada baris yang PERSIS berisi token "[GAMBAR:tengah:angka]" (contoh: "[GAMBAR:tengah:40]") — ini BUKAN bagian dari kalimat, JANGAN ditampilkan sebagai teks. Ubah jadi SATU content_block khusus dengan format: {"text": "", "role": "image-slot", "size_pct": angka_dari_token, "font_size_px": 0, "font_weight": "normal", "color": null, "icon": null}. "size_pct" adalah angka PERSIS dari token (bukan piksel). Ini menandai TEMPAT gambar akan disisipkan di antara blok teks lain (pola umum: Judul → gambar → Keterangan). Pertahankan posisi token ini persis sesuai urutan aslinya, jangan dipindah — dan JANGAN isi "content_image_placement" untuk kasus ini (biarkan null), karena penempatannya sudah diwakili lewat posisi blok ini di "content_blocks".
@@ -1534,11 +955,7 @@ Aturan wajib lainnya:
     - "dots-grid" (pola titik-titik sebagai tekstur, pakai width_px & height_px sebagai luas area pola)
     - "hand-border" (bingkai tepi kanvas bergaya coretan tangan/wobbly, HANYA cocok dipakai 1x per slide sebagai bingkai penuh, bukan elemen kecil -- kalau dipakai, JANGAN kombinasikan sama decoration lain yang menutupi tepi kanvas)
     VARIASIKAN kombinasi tipe per slide (jangan selalu circle semua) -- misal kombinasikan 1 blob besar transparan di pojok + 1-2 dots-grid kecil sebagai tekstur + 1 wave sebagai aksen, supaya slide terasa hidup dan modern, tidak flat/kaku.
-15. "background_gradient": ${gradientMode === 'never'
-  ? `JANGAN PERNAH dipakai -- WAJIB isi null, selalu pakai "background_color" solid saja.`
-  : gradientMode === 'often'
-  ? `SERING pakai ini (targetnya MAYORITAS/lebih dari separuh slide yang kamu desain) untuk kesan modern & tidak flat, terutama gradient soft 2 warna yang senada.`
-  : `Boleh dipakai sesekali kalau menurutmu cocok buat slide tertentu (bukan wajib tiap slide), gradient soft 2 warna yang senada.`} Tetap isi "background_color" sebagai fallback solid.
+15. "background_gradient" JANGAN dianggap opsi langka -- SERING pakai ini (targetnya sekitar separuh dari slide yang kamu desain) untuk kesan lebih modern & tidak flat, terutama gradient soft 2 warna yang senada (misal dari warna terang ke sedikit lebih gelap/beda hue tipis). Tetap isi "background_color" sebagai fallback solid.
 16. Jika user memberi warna manual sebagai acuan utama, WAJIB gunakan warna tersebut (atau turunannya yang harmonis) untuk background_color/text_color/accent_color.
 17. Jika disertakan gambar sampel gaya (bukan gambar konten), analisis palet warna dominan & mood gambar tersebut, lalu padukan dengan warna manual (jika ada) untuk membangun palet slide.
 18. "vertical_position" salah satu dari "top", "center", "bottom" — sesuaikan dengan komposisi paling estetis untuk teks tersebut.
@@ -1551,7 +968,8 @@ Aturan wajib lainnya:
     if (useManualColors.checked){
       manualColorNote = `\n\nWarna manual yang WAJIB dijadikan acuan utama:\n- Background: ${manualBgHex.value}\n- Teks: ${manualTextHex.value}\n- Accent: ${manualAccentHex.value}`;
     }
-    const textBlock = `Teks konten untuk slide ini:\n"""${rawText}"""${manualColorNote}${extra || ''}`;
+    const forceRtlNote = forceRtl.checked ? '\n\nCatatan: paksa is_rtl = true untuk slide ini.' : '';
+    const textBlock = `Teks konten untuk slide ini:\n"""${rawText}"""${manualColorNote}${forceRtlNote}${extra || ''}`;
 
     if (sampleImageDataUrl){
       const match = sampleImageDataUrl.match(/^data:(.+?);base64,(.+)$/);
@@ -1729,30 +1147,6 @@ Aturan wajib lainnya:
 
   const ALIGN_LABEL_ID = { left: 'kiri', center: 'tengah', right: 'kanan' };
 
-  // Satu fungsi terpusat buat SEMUA override deterministik (text_align, vertical_position,
-  // content_image_placement, content_blocks, accent_color, emoji) -- dipakai di generate,
-  // revisi, DAN mode combined, supaya tidak ada lagi celah "lupa apply override" di salah satu
-  // jalur seperti yang sempat terjadi di mode combined.
-  function applyDesignOverrides(design, slideIndex){
-    const targetAlign = resolveTextAlign(slideIndex);
-    design.text_align = targetAlign;
-    if (slides[slideIndex] && slides[slideIndex].hasSpacer){
-      design.vertical_position = 'center';
-    }
-    const frame = slides[slideIndex] && slides[slideIndex].imageFrame;
-    if (frame && frame.position !== 'center'){
-      design.content_image_placement = frame;
-    }
-    if (slides[slideIndex] && slides[slideIndex].hasStructureTags){
-      design.content_blocks = slides[slideIndex].tagBlocks;
-    }
-    design.accent_color = resolveAccentColor(design);
-    if (!enableEmojiIcon.checked && Array.isArray(design.content_blocks)){
-      design.content_blocks.forEach(b => { b.icon = null; });
-    }
-    return design;
-  }
-
   async function generateDesignForSlide(rawText, isRtlHint, slideIndex){
     const targetAlign = resolveTextAlign(slideIndex);
     const alignNote = `\n\nCatatan tata letak: "text_align" untuk slide ini WAJIB "${targetAlign}" (rata ${ALIGN_LABEL_ID[targetAlign]}). Susun komposisi teks, ikon, dan dekorasi supaya cocok dengan perataan ini.`;
@@ -1769,7 +1163,17 @@ Aturan wajib lainnya:
       { role: 'user', parts: buildUserMessageParts(rawText, extra) }
     ];
     const design = await callAIWithFallback(contents, isColorEmphasisAllowed(slideIndex));
-    return applyDesignOverrides(design, slideIndex);
+    design.text_align = targetAlign; // paksa override -> jaminan 100% akurat, tidak bergantung kepatuhan AI
+    if (slides[slideIndex] && slides[slideIndex].hasSpacer){
+      design.vertical_position = 'center'; // paksa center supaya teks+ruang kosong tetap di tengah kanvas
+    }
+    if (frame && frame.position !== 'center'){
+      design.content_image_placement = frame; // paksa override -> posisi gambar dari token, bukan tebakan AI
+    }
+    if (slides[slideIndex] && slides[slideIndex].hasStructureTags){
+      design.content_blocks = slides[slideIndex].tagBlocks; // paksa override -> struktur dari [JUDUL]/[ISI], bukan tebakan AI
+    }
+    return design;
   }
 
   async function reviseDesignForSlide(rawText, previousDesign, instruction, contentImageDataUrl, slideIndex){
@@ -1804,7 +1208,1092 @@ Aturan wajib lainnya:
       { role: 'user', parts: revisionParts }
     ];
     const design = await callAIWithFallback(contents, isColorEmphasisAllowed(slideIndex));
-    return applyDesignOverrides(design, slideIndex);
+    design.text_align = targetAlign; // paksa override -> jaminan 100% akurat, tidak bergantung kepatuhan AI
+    if (slides[slideIndex] && slides[slideIndex].hasSpacer){
+      design.vertical_position = 'center'; // paksa center supaya teks+ruang kosong tetap di tengah kanvas
+    }
+    if (frame && frame.position !== 'center'){
+      design.content_image_placement = frame; // paksa override -> posisi gambar dari token, bukan tebakan AI
+    }
+    if (slides[slideIndex] && slides[slideIndex].hasStructureTags){
+      design.content_blocks = slides[slideIndex].tagBlocks; // paksa override -> struktur dari [JUDUL]/[ISI], bukan tebakan AI
+    }
+    return design;
   }
 
-  // ---------- RENDER SLIDE 
+  // ---------- RENDER SLIDE DOM (full resolution 1080x1350) ----------
+
+  function buildSlideCanvasNode(design, rawText, slideIndex, totalSlides, contentImageDataUrl){
+    const canvas = document.createElement('div');
+    canvas.style.width = EXPORT_WIDTH + 'px';
+    canvas.style.height = EXPORT_HEIGHT + 'px';
+    canvas.style.position = 'relative';
+    canvas.style.overflow = 'hidden';
+    canvas.style.boxSizing = 'border-box';
+    canvas.style.fontFamily = "'Calibri', sans-serif";
+    canvas.dir = 'ltr'; // netral -- arah RTL/LTR ditentukan per-blok teks di bawah, bukan level kanvas
+                         // (supaya elemen UI seperti watermark/dots tidak ikut kebalik kalau ADA blok Arab)
+
+    if (design.background_gradient && design.background_gradient.from && design.background_gradient.to){
+      const dir = design.background_gradient.direction || 'to bottom';
+      canvas.style.background = `linear-gradient(${dir}, ${design.background_gradient.from}, ${design.background_gradient.to})`;
+    } else {
+      canvas.style.backgroundColor = design.background_color || '#ffffff';
+    }
+
+    // ---- dekorasi: circle/rectangle/line (lama) + blob/wave/dots-grid/hand-border (baru) ----
+    // Semua bentuk baru murni CSS/SVG, tidak nambah biaya API sama sekali.
+    // Wobble hand-border pakai pseudo-random SEEDED (bukan Math.random()) supaya hasilnya
+    // identik antara preview & download (desain yang sama = wobble yang sama persis).
+    function seededRandom(seed){
+      const x = Math.sin(seed) * 10000;
+      return (x - Math.floor(x)) * 2 - 1; // -1..1
+    }
+
+    function buildHandDrawnBorderPath(w, h, seed, inset){
+      const jitter = 6;
+      const cols = 6, rows = 8;
+      const pts = [];
+      for (let i = 0; i <= cols; i++){
+        pts.push([inset + (w - 2*inset) * (i/cols) + seededRandom(seed + i) * jitter, inset + seededRandom(seed + i + 50) * jitter]);
+      }
+      for (let i = 1; i <= rows; i++){
+        pts.push([w - inset + seededRandom(seed + i + 100) * jitter, inset + (h - 2*inset) * (i/rows) + seededRandom(seed + i + 150) * jitter]);
+      }
+      for (let i = 1; i <= cols; i++){
+        pts.push([w - inset - (w - 2*inset) * (i/cols) + seededRandom(seed + i + 200) * jitter, h - inset + seededRandom(seed + i + 250) * jitter]);
+      }
+      for (let i = 1; i < rows; i++){
+        pts.push([inset + seededRandom(seed + i + 300) * jitter, h - inset - (h - 2*inset) * (i/rows) + seededRandom(seed + i + 350) * jitter]);
+      }
+      return 'M ' + pts.map(p => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' L ') + ' Z';
+    }
+
+    (design.decorations || []).forEach((dec, decIdx) => {
+      const type = dec.type || 'circle';
+      const decColor = dec.color || (design.accent_color || '#000000');
+      const decOpacity = (dec.opacity != null ? dec.opacity : 0.2);
+
+      if (type === 'blob'){
+        const el = document.createElement('div');
+        el.style.position = 'absolute';
+        el.style.top = (dec.top_pct != null ? dec.top_pct : 0) + '%';
+        el.style.left = (dec.left_pct != null ? dec.left_pct : 0) + '%';
+        el.style.width = (dec.width_px || 160) + 'px';
+        el.style.height = (dec.height_px || dec.width_px || 160) + 'px';
+        el.style.backgroundColor = decColor;
+        el.style.opacity = decOpacity;
+        // border-radius asimetris = trik CSS klasik buat bentuk organik/blob
+        el.style.borderRadius = '62% 38% 55% 45% / 45% 60% 40% 55%';
+        el.style.transform = `rotate(${dec.rotation_deg || 0}deg)`;
+        el.style.pointerEvents = 'none';
+        canvas.appendChild(el);
+        return;
+      }
+
+      if (type === 'wave'){
+        const w = dec.width_px || 200;
+        const h = (dec.height_px || 40);
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'absolute';
+        wrapper.style.top = (dec.top_pct != null ? dec.top_pct : 0) + '%';
+        wrapper.style.left = (dec.left_pct != null ? dec.left_pct : 0) + '%';
+        wrapper.style.transform = `rotate(${dec.rotation_deg || 0}deg)`;
+        wrapper.style.opacity = decOpacity;
+        wrapper.style.pointerEvents = 'none';
+        wrapper.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" fill="none" xmlns="${svgNS}"><path d="M0 ${h/2} Q ${w*0.125} 0 ${w*0.25} ${h/2} T ${w*0.5} ${h/2} T ${w*0.75} ${h/2} T ${w} ${h/2}" stroke="${decColor}" stroke-width="4" stroke-linecap="round"/></svg>`;
+        canvas.appendChild(wrapper);
+        return;
+      }
+
+      if (type === 'dots-grid'){
+        const el = document.createElement('div');
+        el.style.position = 'absolute';
+        el.style.top = (dec.top_pct != null ? dec.top_pct : 0) + '%';
+        el.style.left = (dec.left_pct != null ? dec.left_pct : 0) + '%';
+        el.style.width = (dec.width_px || 160) + 'px';
+        el.style.height = (dec.height_px || dec.width_px || 160) + 'px';
+        el.style.opacity = decOpacity;
+        el.style.backgroundImage = `radial-gradient(circle, ${decColor} 1.6px, transparent 1.6px)`;
+        el.style.backgroundSize = '18px 18px';
+        el.style.transform = `rotate(${dec.rotation_deg || 0}deg)`;
+        el.style.pointerEvents = 'none';
+        canvas.appendChild(el);
+        return;
+      }
+
+      if (type === 'hand-border'){
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const seed = decIdx * 137 + 7; // seeded, bukan Math.random() -> identik tiap render ulang
+        const pathD = buildHandDrawnBorderPath(EXPORT_WIDTH, EXPORT_HEIGHT, seed, 28);
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'absolute';
+        wrapper.style.inset = '0';
+        wrapper.style.pointerEvents = 'none';
+        wrapper.innerHTML = `<svg width="${EXPORT_WIDTH}" height="${EXPORT_HEIGHT}" viewBox="0 0 ${EXPORT_WIDTH} ${EXPORT_HEIGHT}" fill="none" xmlns="${svgNS}"><path d="${pathD}" stroke="${decColor}" stroke-width="${dec.width_px && dec.width_px < 20 ? dec.width_px : 6}" stroke-linecap="round" stroke-linejoin="round" opacity="${decOpacity}"/></svg>`;
+        canvas.appendChild(wrapper);
+        return;
+      }
+
+      // circle / rectangle / line (tipe lama)
+      const el = document.createElement('div');
+      el.style.position = 'absolute';
+      el.style.top = (dec.top_pct != null ? dec.top_pct : 0) + '%';
+      el.style.left = (dec.left_pct != null ? dec.left_pct : 0) + '%';
+      el.style.width = (dec.width_px || 100) + 'px';
+      el.style.height = (type === 'line' ? (dec.height_px || 6) : (dec.height_px || dec.width_px || 100)) + 'px';
+      el.style.backgroundColor = decColor;
+      el.style.opacity = decOpacity;
+      el.style.transform = `rotate(${dec.rotation_deg || 0}deg)`;
+      el.style.borderRadius = type === 'circle' ? '50%' : (type === 'rectangle' ? '4px' : '0');
+      el.style.pointerEvents = 'none';
+      canvas.appendChild(el);
+    });
+
+    // ---- watermark (nama akun) + pagination: hitung dulu posisi & jangkauannya,
+    // SEBELUM safe-zone dibuat -- supaya margin atas/bawah safe-zone bisa mengikuti
+    // jangkauan ASLI elemen ini (bukan angka tetap yang kebetulan aman).
+    const wmConfig = getWatermarkConfig();
+    const hasWatermarkContent = wmConfig.mode !== 'dot' || wmConfig.name;
+    const wmPosition = watermarkPositionSelect.value || 'top-left'; // top-left|top-center|top-right|bottom-left|bottom-center|bottom-right
+    const [wmVSide, wmHSide] = wmPosition.split('-');
+    const EDGE = 48;
+    const WM_RESERVE = 64; // ruang tambahan yang direservasi kalau watermark & dots/arrow berada di sisi bawah yang sama
+    const WM_APPROX_HEIGHT = 38; // taksiran tinggi baris watermark (font 32px + sedikit leading)
+    const DOT_APPROX_HEIGHT = 34;
+    const ARROW_SIZE = 64;
+
+    let dotsBottomOffset = EDGE;
+    let arrowBottomOffset = 40;
+    if (hasWatermarkContent && wmVSide === 'bottom'){
+      if (wmHSide === 'center') dotsBottomOffset = EDGE + WM_RESERVE;
+      if (wmHSide === 'right') arrowBottomOffset = 40 + WM_RESERVE;
+    }
+
+    const hasDots = totalSlides && totalSlides > 1;
+    const hasArrow = hasDots && slideIndex < totalSlides - 1;
+
+    // jangkauan (dari tepi kanvas) elemen UI bawah -- dipakai buat batas bawah safe-zone
+    let bottomChromeExtent = 0;
+    if (hasDots) bottomChromeExtent = Math.max(bottomChromeExtent, dotsBottomOffset + DOT_APPROX_HEIGHT);
+    if (hasArrow) bottomChromeExtent = Math.max(bottomChromeExtent, arrowBottomOffset + ARROW_SIZE);
+    if (hasWatermarkContent && wmVSide === 'bottom') bottomChromeExtent = Math.max(bottomChromeExtent, EDGE + WM_APPROX_HEIGHT);
+
+    // jangkauan elemen UI atas (cuma watermark yang mungkin ada di atas)
+    let topChromeExtent = 0;
+    if (hasWatermarkContent && wmVSide === 'top') topChromeExtent = 44 + WM_APPROX_HEIGHT;
+
+    // ---- gambar konten posisi TEPI (bawah/kiri/kanan): dihitung DI SINI (sebelum safe-zone),
+    // supaya margin horizontal safe-zone bisa tahu apakah perlu direservasi lebar buat frame
+    // kiri/kanan atau tidak. Prioritaskan frame dari token [GAMBAR] (deterministik), fallback ke
+    // keputusan AI (content_image_placement) kalau upload lewat alur revisi lama. Posisi "tengah"
+    // TIDAK masuk sini -- itu ditangani lewat content_block "image-slot" di loop blocks di bawah.
+    const tokenFrame = slides[slideIndex] && slides[slideIndex].imageFrame;
+    const edgeFramePlacement = (tokenFrame && tokenFrame.position !== 'center')
+      ? tokenFrame
+      : (design.content_image_placement && design.content_image_placement.position !== 'center' ? design.content_image_placement : null);
+    const hasHorizontalFrame = edgeFramePlacement && (edgeFramePlacement.position === 'left' || edgeFramePlacement.position === 'right');
+
+    // ---- SAFE ZONE: area konten (teks + gambar) selalu punya margin dari SEMUA sisi kanvas.
+    // Atas & bawah: persis "1 enter" DI LUAR jangkauan watermark/dots/panah yang sesungguhnya
+    // (bukan angka tetap kebetulan aman) -- supaya gambar/teks TIDAK PERNAH menutupi elemen itu.
+    // Kiri & kanan: "1 tab" HANYA kalau memang ada frame gambar di kiri/kanan (perlu ruang buat
+    // frame itu) -- kalau tidak ada, margin tipis saja (3%) supaya teks bisa memaksimalkan lebar
+    // kanvas, tidak kepotong dobel sama padding_px dari AI di atasnya.
+    const enterUnit = EXPORT_HEIGHT * 0.10;
+    const tabUnit = EXPORT_WIDTH * 0.10;
+    const marginTop = topChromeExtent + enterUnit;
+    const marginBottom = bottomChromeExtent + enterUnit;
+    const marginX = hasHorizontalFrame ? tabUnit : (EXPORT_WIDTH * 0.03);
+    const safeWidth = EXPORT_WIDTH - marginX * 2;
+    const safeHeight = EXPORT_HEIGHT - marginTop - marginBottom;
+
+    const safeZone = document.createElement('div');
+    safeZone.style.position = 'absolute';
+    safeZone.style.top = marginTop + 'px';
+    safeZone.style.bottom = marginBottom + 'px';
+    safeZone.style.left = marginX + 'px';
+    safeZone.style.right = marginX + 'px';
+    canvas.appendChild(safeZone);
+
+    // Helper: render gambar dengan fit manual, menghitung ukuran pas dari aspect ratio asli.
+    // Peninggalan dari waktu masih pakai html2canvas (yang tidak mendukung object-fit dengan
+    // benar) -- sekarang sudah pindah ke html-to-image yang render pakai browser asli, jadi CSS
+    // object-fit sebenarnya sudah aman dipakai juga, tapi perhitungan manual ini tetap dipertahankan
+    // karena hasilnya sudah benar & tidak ada ruginya.
+    function renderFittedImage(container, containerW, containerH, dataUrl, aspect){
+      const imgEl = document.createElement('img');
+      imgEl.src = dataUrl;
+      imgEl.style.display = 'block';
+      imgEl.style.borderRadius = '12px';
+      imgEl.style.position = 'absolute';
+      if (aspect){
+        const containerAspect = containerW / containerH;
+        let fitW, fitH;
+        if (aspect > containerAspect){ fitW = containerW; fitH = containerW / aspect; }
+        else { fitH = containerH; fitW = containerH * aspect; }
+        imgEl.style.width = fitW + 'px';
+        imgEl.style.height = fitH + 'px';
+        imgEl.style.left = ((containerW - fitW) / 2) + 'px';
+        imgEl.style.top = ((containerH - fitH) / 2) + 'px';
+      } else {
+        // aspect ratio belum siap ke-cache (sesaat sebelum gambar selesai di-load) -> fallback penuh
+        imgEl.style.width = containerW + 'px';
+        imgEl.style.height = containerH + 'px';
+        imgEl.style.left = '0'; imgEl.style.top = '0';
+      }
+      container.appendChild(imgEl);
+    }
+
+    function renderDashedPlaceholder(container){
+      container.style.border = `3px dashed ${design.accent_color || '#6366f1'}`;
+      container.style.borderRadius = '12px';
+      container.style.display = 'flex';
+      container.style.alignItems = 'center';
+      container.style.justifyContent = 'center';
+      container.style.opacity = '0.55';
+      const placeholderLabel = document.createElement('span');
+      placeholderLabel.textContent = '🖼️';
+      placeholderLabel.style.fontSize = '48px';
+      container.appendChild(placeholderLabel);
+    }
+
+    let edgeFrameSizePx = 0; // dipakai buat hitung inset textWrap di bawah
+    if (edgeFramePlacement){
+      const sizePct = edgeFramePlacement.size_pct || 35;
+      // frameShadowWrap = wrapper LUAR (posisi, ukuran, border-radius, shadow -- TANPA overflow:hidden,
+      // supaya shadow-nya tidak ikut kepotong). frameBox = wrapper DALAM (overflow:hidden buat
+      // clip gambar/placeholder di dalamnya, ikut border-radius yang sama lewat "inherit").
+      const frameShadowWrap = document.createElement('div');
+      frameShadowWrap.style.position = 'absolute';
+      frameShadowWrap.style.borderRadius = '12px';
+      frameShadowWrap.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18)';
+
+      const frameBox = document.createElement('div');
+      frameBox.style.width = '100%';
+      frameBox.style.height = '100%';
+      frameBox.style.boxSizing = 'border-box';
+      frameBox.style.overflow = 'hidden';
+      frameBox.style.borderRadius = 'inherit';
+      frameShadowWrap.appendChild(frameBox);
+
+      let frameW, frameH;
+      if (edgeFramePlacement.position === 'left'){
+        frameW = safeWidth * sizePct / 100; frameH = safeHeight;
+        frameShadowWrap.style.left = '0px'; frameShadowWrap.style.top = '0px';
+        edgeFrameSizePx = frameW;
+      } else if (edgeFramePlacement.position === 'right'){
+        frameW = safeWidth * sizePct / 100; frameH = safeHeight;
+        frameShadowWrap.style.right = '0px'; frameShadowWrap.style.top = '0px';
+        edgeFrameSizePx = frameW;
+      } else { // bottom (default)
+        frameW = safeWidth; frameH = safeHeight * sizePct / 100;
+        frameShadowWrap.style.left = '0px'; frameShadowWrap.style.bottom = '0px';
+        edgeFrameSizePx = frameH;
+      }
+      frameShadowWrap.style.width = frameW + 'px';
+      frameShadowWrap.style.height = frameH + 'px';
+
+      // offset hasil sintaks "geser gambar ke ... N enter/tab" (diproses kode, bukan AI)
+      if (design.image_offset_x || design.image_offset_y){
+        frameShadowWrap.style.transform = `translate(${design.image_offset_x || 0}px, ${design.image_offset_y || 0}px)`;
+      }
+
+      if (contentImageDataUrl){
+        const aspect = slides[slideIndex] && slides[slideIndex].contentImageAspect;
+        renderFittedImage(frameBox, frameW, frameH, contentImageDataUrl, aspect);
+      } else if (tokenFrame){
+        renderDashedPlaceholder(frameBox);
+      }
+
+      safeZone.appendChild(frameShadowWrap);
+    }
+
+    // ---- text container (di dalam safe zone) ----
+    const textWrap = document.createElement('div');
+    textWrap.dataset.textWrap = 'true';
+    textWrap.style.position = 'absolute';
+    textWrap.style.left = '0px';
+    textWrap.style.right = '0px';
+    textWrap.style.top = '0px';
+    textWrap.style.bottom = '0px';
+
+    // Paksa lewat kode (bukan tebakan AI) supaya teks TIDAK PERNAH bertumpuk dengan frame gambar,
+    // jaraknya persis "1 enter" (bawah) atau "1 tab" (kiri/kanan) dari tepi frame.
+    if (edgeFramePlacement){
+      if (edgeFramePlacement.position === 'left') textWrap.style.left = (edgeFrameSizePx + tabUnit) + 'px';
+      else if (edgeFramePlacement.position === 'right') textWrap.style.right = (edgeFrameSizePx + tabUnit) + 'px';
+      else textWrap.style.bottom = (edgeFrameSizePx + enterUnit) + 'px';
+    }
+
+    textWrap.style.padding = (design.padding_px != null ? design.padding_px : 90) + 'px';
+    textWrap.style.boxSizing = 'border-box';
+    textWrap.style.display = 'flex';
+    textWrap.style.flexDirection = 'column';
+    textWrap.style.gap = '18px';
+    textWrap.style.width = '100%';
+    textWrap.style.height = '100%';
+
+    const vpos = design.vertical_position || 'center';
+    textWrap.style.justifyContent = vpos === 'top' ? 'flex-start' : (vpos === 'bottom' ? 'flex-end' : 'center');
+
+    // offset hasil sintaks "geser teks ke ... N enter/tab" (diproses kode, bukan AI)
+    if (design.text_offset_x || design.text_offset_y){
+      textWrap.style.transform = `translate(${design.text_offset_x || 0}px, ${design.text_offset_y || 0}px)`;
+    }
+
+    const blocks = Array.isArray(design.content_blocks) && design.content_blocks.length > 0
+      ? design.content_blocks
+      : [{ text: rawText, role: 'body', font_size_px: 40, font_weight: 'normal', color: null, icon: null }];
+
+    blocks.forEach(block => {
+      // blok khusus "spacer" (dari token [SPASI] yang diketik user) → cuma render ruang kosong, tanpa teks
+      if (block.role === 'spacer'){
+        const spacerEl = document.createElement('div');
+        spacerEl.style.width = '100%';
+        spacerEl.style.height = (block.spacer_height_px || 200) + 'px';
+        spacerEl.style.flexShrink = '0';
+        textWrap.appendChild(spacerEl);
+        return;
+      }
+
+      // blok khusus "image-slot" (dari token [GAMBAR:tengah:N]) → render gambar/placeholder DI ANTARA
+      // blok teks lain, pola Judul-gambar-Keterangan, jarak 1 enter ke blok di atas & bawahnya.
+      if (block.role === 'image-slot'){
+        const slotSizePct = block.size_pct || 35;
+        const slotHeightPx = safeHeight * slotSizePct / 100;
+        const slotShadowWrap = document.createElement('div');
+        slotShadowWrap.style.position = 'relative';
+        slotShadowWrap.style.width = '100%';
+        slotShadowWrap.style.height = slotHeightPx + 'px';
+        slotShadowWrap.style.flexShrink = '0';
+        slotShadowWrap.style.marginTop = enterUnit + 'px';
+        slotShadowWrap.style.marginBottom = enterUnit + 'px';
+        slotShadowWrap.style.borderRadius = '12px';
+        slotShadowWrap.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18)';
+
+        const slotEl = document.createElement('div');
+        slotEl.style.width = '100%';
+        slotEl.style.height = '100%';
+        slotEl.style.boxSizing = 'border-box';
+        slotEl.style.overflow = 'hidden';
+        slotEl.style.borderRadius = 'inherit';
+        slotShadowWrap.appendChild(slotEl);
+
+        if (contentImageDataUrl){
+          const aspect = slides[slideIndex] && slides[slideIndex].contentImageAspect;
+          // lebar kontainer slot = lebar textWrap saat ini (approx safeWidth dikurangi padding kiri-kanan);
+          // dipakai sebagai batas lebar wajar untuk perhitungan fit manual.
+          renderFittedImage(slotEl, safeWidth, slotHeightPx, contentImageDataUrl, aspect);
+        } else if (tokenFrame){
+          renderDashedPlaceholder(slotEl);
+        }
+        textWrap.appendChild(slotShadowWrap);
+        return;
+      }
+
+      // Deteksi Arab PER-BARIS (bukan per-blok) -- AI kadang menggabungkan baris Arab + terjemahan
+      // Latin jadi satu blok, jadi kalau cuma dicek di level blok, baris Latin di dalamnya ikut
+      // kena RTL. Pecah dulu berdasarkan baris baru, render tiap baris dengan arahnya sendiri.
+      const lines = (block.text || '').split('\n');
+
+      lines.forEach((lineText, lineIdx) => {
+        if (lineText.trim() === '' && lines.length > 1) return; // skip baris kosong hasil split
+
+        // deteksi list marker ("- item" / "1. item") di baris ini
+        const listInfo = extractListMarker(lineText);
+        const contentText = listInfo ? listInfo.content : lineText;
+        const lineIsArabic = containsArabic(contentText);
+        const blockRow = document.createElement('div');
+        blockRow.style.display = 'flex';
+        blockRow.style.flexDirection = lineIsArabic ? 'row-reverse' : 'row';
+        blockRow.style.alignItems = 'center';
+        blockRow.style.justifyContent = design.text_align === 'left' ? 'flex-start' : (design.text_align === 'right' ? 'flex-end' : 'center');
+        blockRow.style.gap = '14px';
+        blockRow.style.flexWrap = 'wrap';
+
+        if (block.icon && lineIdx === 0){
+          const iconEl = document.createElement('span');
+          iconEl.style.fontSize = Math.round((block.font_size_px || 36) * 1.15) + 'px';
+          iconEl.style.lineHeight = '1';
+          iconEl.textContent = block.icon;
+          blockRow.appendChild(iconEl);
+        }
+
+        // Ukuran font ditentukan TETAP (bukan rentang bebas dari AI): Judul=45px, Teks biasa=35px,
+        // baris Arab SELALU 55px berapa pun role-nya (lebih besar dari Latin karena karakter Arab
+        // + harakat butuh ruang lebih supaya nyaman dibaca). subheading/caption tetap fleksibel.
+        let resolvedFontSize;
+        if (lineIsArabic){
+          resolvedFontSize = 55;
+        } else if (block.role === 'heading'){
+          resolvedFontSize = 45;
+        } else if (block.role === 'subheading'){
+          resolvedFontSize = block.font_size_px || 42;
+        } else if (block.role === 'caption'){
+          resolvedFontSize = block.font_size_px || 22;
+        } else { // body / default
+          resolvedFontSize = 35;
+        }
+
+        // Teks Arab TIDAK BOLEH bold maupun italic apa pun role-nya (permintaan eksplisit).
+        let resolvedWeight = block.font_weight || (block.role === 'heading' || block.role === 'subheading' ? 'bold' : 'normal');
+        if (lineIsArabic) resolvedWeight = 'normal';
+
+        if (listInfo){
+          const markerEl = document.createElement('span');
+          if (listInfo.type === 'bullet'){
+            const BULLET_GLYPHS = { dot: '•', square: '▪', check: '✓', cross: '✗', arrow: '➤' };
+            markerEl.textContent = BULLET_GLYPHS[listInfo.style] || '•';
+          } else {
+            markerEl.textContent = listInfo.label + '.';
+          }
+          markerEl.style.fontWeight = 'bold';
+          markerEl.style.fontSize = resolvedFontSize + 'px';
+          markerEl.style.flexShrink = '0';
+          markerEl.style.fontFamily = "'Calibri', sans-serif";
+          markerEl.style.color = design.text_color || '#111111';
+          blockRow.appendChild(markerEl);
+        }
+
+        // lineWrap membungkus semua segmen (bold/italic/underline/strike/superscript) 1 baris ini
+        const lineWrap = document.createElement('span');
+        lineWrap.dir = lineIsArabic ? 'rtl' : 'ltr'; // arah per-baris, bukan ikut is_rtl satu slide/blok penuh
+        lineWrap.style.fontSize = resolvedFontSize + 'px';
+        lineWrap.style.lineHeight = design.line_height || 1.4;
+        lineWrap.style.whiteSpace = 'pre-wrap';
+        lineWrap.style.wordBreak = 'break-word';
+        // Judul (bukan Arab) pakai Poppins -- font display yang lebih tegas/khas, biar ada
+        // hierarki tipografi berlapis (tidak semua ukuran pakai font yang sama persis).
+        // Teks Arab & body/caption tetap Calibri (yang sudah terbukti aman buat rendering Arab).
+        lineWrap.style.fontFamily = (block.role === 'heading' && !lineIsArabic)
+          ? "'Poppins', 'Calibri', sans-serif"
+          : "'Calibri', sans-serif";
+        // PENTING: justify-content di blockRow cuma ngatur posisi ITEM (span) sebagai satu kesatuan,
+        // TIDAK ngatur perataan baris-baris hasil wrap DI DALAM span itu sendiri kalau teksnya panjang.
+        // Makanya text-align eksplisit wajib di-set di sini juga, supaya teks panjang yang wrap ke
+        // beberapa baris tetap ikut rata tengah/kiri/kanan sesuai design.text_align, bukan nempel kiri.
+        lineWrap.style.textAlign = design.text_align === 'left' ? 'left' : (design.text_align === 'right' ? 'right' : 'center');
+
+        const segments = parseInlineFormatting(contentText);
+        segments.forEach(seg => {
+          const segSpan = document.createElement('span');
+          segSpan.textContent = seg.text;
+          // "color" dipakai buat penekanan kata/frasa kunci (kalau mode-nya diaktifkan) —
+          // ini murni warna teks, TANPA kotak background apapun, jadi tidak ada risiko presisi
+          // seperti kasus highlight-background yang berulang kali meleset di html2canvas.
+          segSpan.style.color = block.color || design.text_color || '#111111';
+          segSpan.style.fontWeight = lineIsArabic ? 'normal' : (seg.bold ? 'bold' : resolvedWeight);
+          segSpan.style.fontStyle = (!lineIsArabic && seg.italic) ? 'italic' : 'normal'; // Arab tidak pernah italic
+          let decoration = [];
+          if (seg.underline) decoration.push('underline');
+          if (seg.strike) decoration.push('line-through');
+          segSpan.style.textDecoration = decoration.length ? decoration.join(' ') : 'none';
+          if (seg.sup){
+            segSpan.style.verticalAlign = 'super';
+            segSpan.style.fontSize = '0.7em';
+          }
+          lineWrap.appendChild(segSpan);
+        });
+
+        blockRow.appendChild(lineWrap);
+        textWrap.appendChild(blockRow);
+      });
+    });
+
+    safeZone.appendChild(textWrap);
+
+    // ---- watermark ----
+    if (hasWatermarkContent){
+      const wm = buildWatermarkNode(wmConfig, design.text_color || '#111111', design.accent_color || '#6366f1');
+      wm.style.position = 'absolute';
+      wm.style.fontFamily = "'Calibri', sans-serif";
+      wm.style.fontSize = '32px';
+      wm.style.fontWeight = '700';
+      wm.style.letterSpacing = '0.5px';
+      wm.style.opacity = '0.85';
+      wm.style.whiteSpace = 'nowrap';
+
+      if (wmVSide === 'top'){ wm.style.top = '44px'; wm.style.bottom = 'auto'; }
+      else { wm.style.bottom = EDGE + 'px'; wm.style.top = 'auto'; }
+
+      if (wmHSide === 'left'){ wm.style.left = '48px'; wm.style.right = 'auto'; }
+      else if (wmHSide === 'right'){ wm.style.right = '48px'; wm.style.left = 'auto'; }
+      else { wm.style.left = '50%'; wm.style.right = 'auto'; wm.style.transform = 'translateX(-50%)'; }
+
+      wm.dir = 'ltr'; canvas.appendChild(wm);
+    }
+
+    // ---- pagination dots + arrow ----
+    if (totalSlides && totalSlides > 1){
+      const dotsWrap = document.createElement('div');
+      dotsWrap.style.position = 'absolute';
+      dotsWrap.style.bottom = dotsBottomOffset + 'px';
+      dotsWrap.style.left = '0';
+      dotsWrap.style.right = '0';
+      dotsWrap.style.display = 'flex';
+      dotsWrap.style.justifyContent = 'center';
+      dotsWrap.style.alignItems = 'center';
+      dotsWrap.style.gap = '10px';
+
+      for (let i = 0; i < totalSlides; i++){
+        const dot = document.createElement('span');
+        const isActive = i === slideIndex;
+        dot.style.height = '14px';
+        dot.style.borderRadius = '999px';
+        dot.style.transition = 'none';
+        dot.style.backgroundColor = isActive ? (design.accent_color || '#6366f1') : (design.text_color || '#111111');
+        dot.style.opacity = isActive ? '1' : '0.3';
+        dot.style.width = isActive ? '34px' : '14px';
+        dotsWrap.appendChild(dot);
+      }
+      dotsWrap.dir = 'ltr'; canvas.appendChild(dotsWrap);
+
+      if (slideIndex < totalSlides - 1){
+        const arrowBadge = document.createElement('div');
+        arrowBadge.style.position = 'absolute';
+        arrowBadge.style.bottom = arrowBottomOffset + 'px';
+        arrowBadge.style.right = '48px';
+        arrowBadge.style.width = '64px';
+        arrowBadge.style.height = '64px';
+        arrowBadge.style.borderRadius = '50%';
+        arrowBadge.style.backgroundColor = design.accent_color || '#6366f1';
+        arrowBadge.style.display = 'flex';
+        arrowBadge.style.alignItems = 'center';
+        arrowBadge.style.justifyContent = 'center';
+        arrowBadge.style.boxShadow = '0 4px 14px rgba(0,0,0,0.25)';
+
+        // pakai SVG (bukan karakter teks "→") supaya posisinya presisi & tidak tergantung metrik font
+        arrowBadge.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+          <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+
+        arrowBadge.dir = 'ltr'; canvas.appendChild(arrowBadge);
+      }
+    }
+
+    return canvas;
+  }
+
+
+  // ---------- SLIDE UI BLOCKS ----------
+  function createSlideBlock(index){
+    const wrapper = document.createElement('div');
+    wrapper.id = `slide-block-${index}`;
+    wrapper.className = 'bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center';
+
+    wrapper.innerHTML = `
+      <div class="w-full flex items-center justify-between mb-2">
+        <span class="text-xs font-semibold text-slate-500">Slide ${index + 1}</span>
+        <span id="status-badge-${index}" class="status-badge bg-slate-200 text-slate-600">Menunggu</span>
+      </div>
+      <div id="slide-frame-${index}" class="slide-frame" style="width:${PREVIEW_WIDTH}px;height:${PREVIEW_HEIGHT}px;">
+        <div id="slide-loading-${index}" class="absolute inset-0 flex items-center justify-center bg-slate-800/70">
+          <div class="spinner"></div>
+        </div>
+      </div>
+      <div class="w-full mt-3 flex flex-col gap-2">
+        <button id="download-btn-${index}" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold py-2 rounded-lg disabled:opacity-40" disabled>
+          ⬇️ Download Slide Ini
+        </button>
+        <button id="retry-btn-${index}" class="hidden w-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 rounded-lg">
+          🔄 Coba Lagi
+        </button>
+        <div class="flex items-center gap-2">
+          <input id="content-image-input-${index}" type="file" accept="image/*" class="hidden">
+          <button id="content-image-btn-${index}" type="button" title="Lampirkan gambar konten (opsional)"
+            class="shrink-0 w-9 h-9 flex items-center justify-center border border-slate-300 rounded-lg text-sm hover:bg-slate-50">🖼️</button>
+          <input id="revise-input-${index}" type="text" placeholder="instruksi (opsional): mis. taruh gambar di bawah..."
+            class="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          <button id="revise-btn-${index}" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 rounded-lg disabled:opacity-40" disabled>
+            🔁 Update
+          </button>
+        </div>
+        <div id="content-image-preview-${index}" class="hidden items-center gap-2 text-xs text-slate-500">
+          <img id="content-image-thumb-${index}" class="w-9 h-9 object-cover rounded border border-slate-200">
+          <span>Gambar terlampir untuk slide ini</span>
+          <button id="content-image-remove-${index}" type="button" class="text-red-500 hover:underline">Hapus</button>
+        </div>
+        <p class="text-[10px] text-slate-400">Tip instruksi: ketik <code class="bg-slate-100 px-1 rounded">geser teks ke atas 2 enter</code> atau <code class="bg-slate-100 px-1 rounded">geser gambar ke kanan 3 tab</code> buat geser posisi TANPA panggil AI (gratis). 1 layar = 10 enter (vertikal) / 10 tab (horizontal).</p>
+
+        <details class="w-full border border-slate-200 rounded-lg">
+          <summary class="cursor-pointer text-xs font-semibold text-slate-600 px-3 py-2 select-none">✏️ Edit Lanjutan Slide Ini</summary>
+          <div class="p-3 pt-1 flex flex-col gap-2 border-t border-slate-100">
+            <div>
+              <label class="text-xs text-slate-500 block mb-1">Edit Teks Konten Slide Ini</label>
+              <div id="fmt-toolbar-edit-${index}" class="flex flex-wrap gap-1 mb-1"></div>
+              <textarea id="edit-text-${index}" rows="3" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"></textarea>
+              <button id="apply-text-btn-${index}" type="button" class="mt-1 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-1.5 rounded-lg">
+                🔄 Generate Ulang dari Teks Baru (khusus slide ini)
+              </button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs text-slate-500 block mb-1">Background Slide Ini</label>
+                <input type="color" id="quick-bg-${index}" value="#ffffff" class="w-full h-8 border border-slate-300 rounded">
+              </div>
+              <div>
+                <label class="text-xs text-slate-500 block mb-1">Warna Teks Utama</label>
+                <input type="color" id="quick-text-${index}" value="#111111" class="w-full h-8 border border-slate-300 rounded">
+              </div>
+            </div>
+            <button id="apply-quick-color-btn-${index}" type="button" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-1.5 rounded-lg">
+              🎨 Terapkan Warna (langsung, tanpa panggil AI)
+            </button>
+          </div>
+        </details>
+
+        <p id="error-msg-${index}" class="hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2"></p>
+      </div>
+    `;
+    return wrapper;
+  }
+
+  function setStatus(index, status, errorMsg){
+    const badge = document.getElementById(`status-badge-${index}`);
+    const errEl = document.getElementById(`error-msg-${index}`);
+    const dlBtn = document.getElementById(`download-btn-${index}`);
+    const revBtn = document.getElementById(`revise-btn-${index}`);
+    const retryBtn = document.getElementById(`retry-btn-${index}`);
+    const loadingEl = document.getElementById(`slide-loading-${index}`);
+
+    slides[index].status = status;
+    const hasDesign = !!slides[index].design;
+
+    if (status === 'loading'){
+      badge.textContent = 'Memproses...';
+      badge.className = 'status-badge bg-indigo-100 text-indigo-600';
+      if (loadingEl) loadingEl.classList.remove('hidden');
+      dlBtn.disabled = true; revBtn.disabled = true;
+      retryBtn.classList.add('hidden');
+      errEl.classList.add('hidden');
+    } else if (status === 'done'){
+      badge.textContent = 'Selesai';
+      badge.className = 'status-badge bg-emerald-100 text-emerald-600';
+      if (loadingEl) loadingEl.classList.add('hidden');
+      dlBtn.disabled = false; revBtn.disabled = false;
+      retryBtn.classList.add('hidden');
+      errEl.classList.add('hidden');
+    } else if (status === 'error'){
+      badge.textContent = 'Gagal';
+      badge.className = 'status-badge bg-red-100 text-red-600';
+      if (loadingEl) loadingEl.classList.add('hidden');
+      // kalau sebelumnya sudah pernah berhasil (mis. revisi yang gagal), biarkan slide lama tetap bisa didownload/direvisi
+      dlBtn.disabled = !hasDesign;
+      revBtn.disabled = !hasDesign;
+      retryBtn.classList.toggle('hidden', hasDesign);
+      errEl.textContent = errorMsg || 'Terjadi kesalahan.';
+      errEl.classList.remove('hidden');
+    }
+  }
+
+  function renderSlidePreview(index){
+    const frame = document.getElementById(`slide-frame-${index}`);
+    // buang canvas lama (jika ada), sisakan div loading
+    Array.from(frame.querySelectorAll('.slide-canvas')).forEach(n => n.remove());
+
+    const design = slides[index].design;
+    const rawText = slides[index].rawText;
+    const canvas = buildSlideCanvasNode(design, rawText, index, slides.length, slides[index].contentImage);
+    canvas.classList.add('slide-canvas');
+    canvas.style.transform = `scale(${PREVIEW_SCALE})`;
+    frame.appendChild(canvas);
+  }
+
+  // ---------- CAPTURE & DOWNLOAD ----------
+  async function captureSlideToBlob(index){
+    const design = slides[index].design;
+    const rawText = slides[index].rawText;
+    const fullNode = buildSlideCanvasNode(design, rawText, index, slides.length, slides[index].contentImage);
+    fullNode.style.transform = 'none';
+    captureSandbox.innerHTML = '';
+    captureSandbox.appendChild(fullNode);
+
+    // pastikan font web (Poppins) sudah selesai dimuat sebelum di-capture
+    try { await document.fonts.ready; } catch(e){}
+
+    // pastikan semua elemen <img> (mis. gambar konten) SUDAH SELESAI dimuat/decode sebelum
+    // di-capture, supaya library punya data gambar utuh saat menyusun SVG snapshot-nya.
+    const imgsToWait = Array.from(fullNode.querySelectorAll('img'));
+    await Promise.all(imgsToWait.map(img => {
+      if (typeof img.decode === 'function'){
+        return img.decode().catch(() => {});
+      }
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener('error', resolve, { once: true });
+      });
+    }));
+
+    // htmlToImage (bukan lagi html2canvas): render pakai SVG <foreignObject> -> browser ASLI
+    // yang menggambar (bukan reimplementasi CSS lewat JS) -> jauh lebih akurat untuk
+    // flexbox/gap, SVG, dan skala gambar (object-fit, dsb).
+    const blob = await htmlToImage.toBlob(fullNode, {
+      width: EXPORT_WIDTH,
+      height: EXPORT_HEIGHT,
+      pixelRatio: 1,
+      cacheBust: true
+    });
+
+    captureSandbox.innerHTML = '';
+
+    return blob;
+  }
+
+
+  async function downloadSlide(index){
+    if (slides[index].status !== 'done') return;
+    const blob = await captureSlideToBlob(index);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `slide-${index + 1}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }
+
+  async function downloadAllSlides(){
+    const doneIndices = slides.map((s, i) => i).filter(i => slides[i].status === 'done');
+    if (doneIndices.length === 0){
+      showSidebarError('Belum ada slide yang siap untuk didownload.');
+      return;
+    }
+    for (const i of doneIndices){
+      await downloadSlide(i);
+      await new Promise(r => setTimeout(r, 400));
+    }
+  }
+
+  // ---------- MAIN GENERATE FLOW ----------
+  async function generateAllSlides(){
+    clearSidebarError();
+    if (!hasAnyApiKey()){
+      showSidebarError('Mohon isi minimal satu API key provider AI terlebih dahulu.');
+      return;
+    }
+    const rawParts = parseSlidesFromText(rawTextArea.value);
+    if (rawParts.length === 0){
+      showSidebarError('Mohon isi teks konten slide terlebih dahulu.');
+      return;
+    }
+
+    applyChosenRatio();
+
+    slides = rawParts.map((text, i) => {
+      const { cleanText: afterAlign, alignOverride } = extractAlignOverride(text);
+      const { cleanText, imageFrame } = extractImageFrame(afterAlign);
+      const hasTags = hasStructureTags(cleanText);
+      return {
+        id: i,
+        rawText: cleanText,
+        design: null,
+        status: 'pending',
+        isRtl: forceRtl.checked || containsArabic(cleanText),
+        contentImage: null,
+        alignOverride: alignOverride,
+        hasSpacer: hasSpacerToken(cleanText),
+        imageFrame: imageFrame,
+        hasStructureTags: hasTags,
+        tagBlocks: hasTags ? buildBlocksFromTags(cleanText) : null
+      };
+    });
+
+    emptyState.classList.add('hidden');
+    slidesContainer.innerHTML = '';
+    slides.forEach((s, i) => {
+      slidesContainer.appendChild(createSlideBlock(i));
+      attachSlideBlockEvents(i);
+      setStatus(i, 'loading');
+    });
+
+    generateBtn.disabled = true;
+    generateBtn.textContent = '⏳ Sedang memproses...';
+    document.querySelectorAll('input[name="slideRatio"]').forEach(r => r.disabled = true);
+
+    const modeEl = document.querySelector('input[name="generateMode"]:checked');
+    const mode = modeEl ? modeEl.value : 'per-slide';
+
+    if (mode === 'combined' && slides.length > 1){
+      await runCombinedGeneration();
+    } else {
+      for (let i = 0; i < slides.length; i++){
+        try {
+          const design = await generateDesignForSlide(slides[i].rawText, slides[i].isRtl, i);
+          slides[i].design = design;
+          renderSlidePreview(i);
+          setStatus(i, 'done');
+        } catch(err){
+          setStatus(i, 'error', err.message);
+        }
+      }
+    }
+
+    generateBtn.disabled = false;
+    generateBtn.textContent = '✨ Generate Semua Slide';
+    document.querySelectorAll('input[name="slideRatio"]').forEach(r => r.disabled = false);
+  }
+
+  // Mode "Generate Sekaligus": gabung SEMUA slide jadi SATU request API (hemat RPD drastis --
+  // 10 slide = 1 request, bukan 10). Trade-off: kalau request ini gagal/kepotong token, SEMUA
+  // slide gagal bareng (all-or-nothing), beda dari mode per-slide yang lebih tahan banting.
+  async function runCombinedGeneration(){
+    const colorMode = document.querySelector('input[name="textColorMode"]:checked').value;
+
+    const slideNotes = slides.map((s, i) => {
+      const targetAlign = resolveTextAlign(i);
+      let note = `--- SLIDE ${i + 1} ---\nTeks: """${s.rawText}"""\ntext_align WAJIB untuk slide ini: "${targetAlign}" (rata ${ALIGN_LABEL_ID[targetAlign]}).`;
+      if (s.isRtl) note += `\nSlide ini mengandung karakter Arab.`;
+      if (s.imageFrame && s.imageFrame.position !== 'center'){
+        note += `\nAda frame gambar TEPI "${s.imageFrame.position}" seluas ${s.imageFrame.size_pct}% -> "content_image_placement" WAJIB diisi persis {"position":"${s.imageFrame.position}","size_pct":${s.imageFrame.size_pct}}.`;
+      } else if (s.imageFrame && s.imageFrame.position === 'center'){
+        note += `\nSlide ini mengandung token literal "[GAMBAR:tengah:${s.imageFrame.size_pct}]" -- ikuti aturan 6b (content_block role "image-slot"), JANGAN isi content_image_placement.`;
+      }
+      if (s.hasSpacer) note += `\nSlide ini pakai token [SPASI] -> "vertical_position" WAJIB "center".`;
+      if (s.hasStructureTags) note += `\nSlide ini pakai tag [JUDUL]/[ISI] eksplisit -- isi "content_blocks": [] (array kosong) untuk slide ini, kode kita yang akan menyusun strukturnya sendiri.`;
+      const allowColor = colorMode === 'all' || (colorMode === 'slide1' && i === 0);
+      note += `\nVariasi warna teks (field "color" per blok, kalau content_blocks diisi): ${allowColor ? 'BOLEH dipakai untuk 1-3 kata kunci' : 'WAJIB null semua, TIDAK ADA variasi warna'}.`;
+      return note;
+    }).join('\n\n');
+
+    const contents = [
+      { role: 'user', parts: [{ text: slideNotes }] }
+    ];
+
+    try {
+      const result = await callAIWithFallback(contents, colorMode !== 'none', slides.length);
+      const designs = Array.isArray(result) ? result : result.designs;
+      if (!Array.isArray(designs) || designs.length !== slides.length){
+        throw new Error(`AI mengembalikan jumlah desain yang tidak sesuai (dapat ${Array.isArray(designs) ? designs.length : 0}, harusnya ${slides.length}). Coba lagi atau pakai mode Per-Slide.`);
+      }
+      designs.forEach((design, i) => {
+        design.text_align = resolveTextAlign(i);
+        if (slides[i].hasSpacer) design.vertical_position = 'center';
+        if (slides[i].imageFrame && slides[i].imageFrame.position !== 'center'){
+          design.content_image_placement = slides[i].imageFrame;
+        }
+        if (slides[i].hasStructureTags){
+          design.content_blocks = slides[i].tagBlocks;
+        }
+        slides[i].design = design;
+        renderSlidePreview(i);
+        setStatus(i, 'done');
+      });
+    } catch(err){
+      // all-or-nothing: request gabungan gagal -> semua slide di batch ini ditandai gagal
+      slides.forEach((s, i) => setStatus(i, 'error', err.message));
+    }
+  }
+
+  function attachSlideBlockEvents(index){
+    document.getElementById(`download-btn-${index}`).addEventListener('click', () => downloadSlide(index));
+    document.getElementById(`revise-btn-${index}`).addEventListener('click', () => reviseSlide(index));
+    document.getElementById(`retry-btn-${index}`).addEventListener('click', () => retrySlide(index));
+    document.getElementById(`revise-input-${index}`).addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') reviseSlide(index);
+    });
+    document.getElementById(`content-image-btn-${index}`).addEventListener('click', () => {
+      document.getElementById(`content-image-input-${index}`).click();
+    });
+    document.getElementById(`content-image-input-${index}`).addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) handleContentImageSelect(index, e.target.files[0]);
+    });
+    document.getElementById(`content-image-remove-${index}`).addEventListener('click', () => removeContentImage(index));
+
+    // edit teks konten khusus slide ini
+    const editTextArea = document.getElementById(`edit-text-${index}`);
+    editTextArea.value = slides[index].rawText;
+    renderFormatToolbar(document.getElementById(`fmt-toolbar-edit-${index}`), editTextArea);
+    document.getElementById(`apply-text-btn-${index}`).addEventListener('click', () => applyTextEdit(index));
+
+    // color picker cepat (langsung, tanpa panggil AI)
+    document.getElementById(`apply-quick-color-btn-${index}`).addEventListener('click', () => applyQuickColors(index));
+  }
+
+  async function applyTextEdit(index){
+    const textarea = document.getElementById(`edit-text-${index}`);
+    const newRawText = textarea.value.trim();
+    if (!newRawText) return;
+    if (!hasAnyApiKey()){
+      showSidebarError('Mohon isi minimal satu API key provider AI terlebih dahulu.');
+      return;
+    }
+
+    // proses ulang token [RATA]/[SPASI]/[GAMBAR]/[JUDUL]/[ISI] dari teks baru ini, konsisten dengan parsing awal
+    const { cleanText: afterAlign, alignOverride } = extractAlignOverride(newRawText);
+    const { cleanText, imageFrame } = extractImageFrame(afterAlign);
+    const hasTags = hasStructureTags(cleanText);
+    slides[index].rawText = cleanText;
+    slides[index].alignOverride = alignOverride;
+    slides[index].hasSpacer = hasSpacerToken(cleanText);
+    slides[index].imageFrame = imageFrame;
+    slides[index].isRtl = forceRtl.checked || containsArabic(cleanText);
+    slides[index].hasStructureTags = hasTags;
+    slides[index].tagBlocks = hasTags ? buildBlocksFromTags(cleanText) : null;
+    textarea.value = cleanText;
+
+    setStatus(index, 'loading');
+    try {
+      const design = await generateDesignForSlide(slides[index].rawText, slides[index].isRtl, index);
+      slides[index].design = design;
+      renderSlidePreview(index);
+      setStatus(index, 'done');
+    } catch(err){
+      setStatus(index, 'error', err.message);
+    }
+  }
+
+  function applyQuickColors(index){
+    if (!slides[index].design){
+      showSidebarError('Slide ini belum memiliki desain, klik "Coba Lagi" dulu.');
+      return;
+    }
+    // Langsung ubah objek desain yang sudah ada & render ulang -- TANPA panggil AI sama sekali,
+    // karena kita sudah tahu persis warna hex yang mau dipakai (tidak perlu ditebak).
+    const bgVal = document.getElementById(`quick-bg-${index}`).value;
+    const textVal = document.getElementById(`quick-text-${index}`).value;
+    slides[index].design.background_color = bgVal;
+    slides[index].design.background_gradient = null; // matikan gradient supaya warna solid ini kelihatan
+    slides[index].design.text_color = textVal;
+    renderSlidePreview(index);
+  }
+
+  function handleContentImageSelect(index, file){
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      slides[index].contentImage = ev.target.result;
+      const preview = document.getElementById(`content-image-preview-${index}`);
+      const thumb = document.getElementById(`content-image-thumb-${index}`);
+      thumb.src = ev.target.result;
+      preview.classList.remove('hidden');
+      preview.classList.add('flex');
+
+      // Simpan rasio asli gambar (naturalWidth/naturalHeight) buat perhitungan fit manual
+      // (renderFittedImage) -- peninggalan dari waktu masih pakai html2canvas, tapi tetap
+      // dipertahankan karena hasilnya sudah benar & tidak ada ruginya.
+      const probeImg = new Image();
+      probeImg.onload = () => {
+        slides[index].contentImageAspect = probeImg.naturalWidth / probeImg.naturalHeight;
+        // kalau frame dari token, re-render setelah aspect ratio siap supaya ukurannya pas
+        if (slides[index].imageFrame && slides[index].design){
+          renderSlidePreview(index);
+        }
+      };
+      probeImg.src = ev.target.result;
+
+      // Kalau slide ini sudah punya frame dari token [GAMBAR], posisinya sudah pasti (deterministik) --
+      // jadi gambar bisa langsung dirender ke frame tanpa perlu panggil API lagi sama sekali (gratis).
+      if (slides[index].imageFrame && slides[index].design){
+        renderSlidePreview(index);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeContentImage(index){
+    slides[index].contentImage = null;
+    slides[index].contentImageAspect = null;
+    const preview = document.getElementById(`content-image-preview-${index}`);
+    preview.classList.add('hidden');
+    preview.classList.remove('flex');
+    document.getElementById(`content-image-input-${index}`).value = '';
+    // langsung re-render tanpa panggil AI, supaya gambar hilang dari preview seketika
+    if (slides[index].design) renderSlidePreview(index);
+  }
+
+  async function retrySlide(index){
+    if (!hasAnyApiKey()){
+      showSidebarError('Mohon isi minimal satu API key provider AI terlebih dahulu.');
+      return;
+    }
+    setStatus(index, 'loading');
+    try {
+      const design = await generateDesignForSlide(slides[index].rawText, slides[index].isRtl, index);
+      slides[index].design = design;
+      renderSlidePreview(index);
+      setStatus(index, 'done');
+    } catch(err){
+      setStatus(index, 'error', err.message);
+    }
+  }
+
+  const GESER_REGEX = /geser\s+(teks|gambar)\s+ke\s+(atas|bawah|kiri|kanan)\s+(\d+)\s*(enter|tab)/i;
+
+  // Coba tangani instruksi "geser ..." langsung lewat kode (gratis, 0 token API).
+  // Return true kalau instruksinya cocok & berhasil diproses (reviseSlide berhenti di sini,
+  // tidak lanjut panggil AI). Return false kalau bukan instruksi geser (lanjut proses normal).
+  function tryApplyGeserInstruction(index, instruction){
+    const match = instruction.match(GESER_REGEX);
+    if (!match) return false;
+    if (!slides[index].design){
+      showSidebarError('Slide ini belum memiliki desain, klik "Coba Lagi" dulu.');
+      return true;
+    }
+
+    const [, target, direction, amountStr, unitRaw] = match;
+    const amount = parseInt(amountStr, 10);
+    const unit = unitRaw.toLowerCase();
+    const isVertical = (direction.toLowerCase() === 'atas' || direction.toLowerCase() === 'bawah');
+    const sign = (direction.toLowerCase() === 'atas' || direction.toLowerCase() === 'kiri') ? -1 : 1;
+    const unitPx = unit === 'enter' ? (EXPORT_HEIGHT * 0.10) : (EXPORT_WIDTH * 0.10);
+    const deltaPx = sign * amount * unitPx;
+
+    const design = slides[index].design;
+    if (target.toLowerCase() === 'teks'){
+      if (isVertical) design.text_offset_y = (design.text_offset_y || 0) + deltaPx;
+      else design.text_offset_x = (design.text_offset_x || 0) + deltaPx;
+    } else {
+      if (isVertical) design.image_offset_y = (design.image_offset_y || 0) + deltaPx;
+      else design.image_offset_x = (design.image_offset_x || 0) + deltaPx;
+    }
+
+    renderSlidePreview(index);
+    document.getElementById(`revise-input-${index}`).value = '';
+    return true;
+  }
+
+  async function reviseSlide(index){
+    const input = document.getElementById(`revise-input-${index}`);
+    const instruction = input.value.trim();
+    const contentImage = slides[index].contentImage;
+    if (!instruction && !contentImage) return;
+
+    // instruksi "geser ..." ditangani lokal (gratis, 0 token API), tidak perlu API key sama sekali
+    if (instruction && tryApplyGeserInstruction(index, instruction)) return;
+
+    if (!hasAnyApiKey()){
+      showSidebarError('Mohon isi minimal satu API key provider AI terlebih dahulu.');
+      return;
+    }
+    if (!slides[index].design){
+      showSidebarError('Slide ini belum memiliki desain awal, klik "Coba Lagi" dulu.');
+      return;
+    }
+
+    setStatus(index, 'loading');
+    try {
+      const newDesign = await reviseDesignForSlide(slides[index].rawText, slides[index].design, instruction, contentImage, index);
+      slides[index].design = newDesign;
+      renderSlidePreview(index);
+      setStatus(index, 'done');
+      input.value = '';
+    } catch(err){
+      setStatus(index, 'error', err.message);
+    }
+  }
+
+  // ---------- EVENTS ----------
+  generateBtn.addEventListener('click', generateAllSlides);
+  downloadAllBtn.addEventListener('click', downloadAllSlides);
+
+  init();
+  updateWatermarkPreview();
+  renderFormatToolbar(document.getElementById('fmt-toolbar-main'), rawTextArea);
+})();
+</script>
+</body>
+</html>
