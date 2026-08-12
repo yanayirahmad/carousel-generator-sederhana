@@ -6,7 +6,7 @@
 <title>Me-Car — Media Carousel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&family=Lora:wght@400;500;600;700&family=Montserrat:wght@600;700;800;900&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=Merriweather:wght@600;700;900&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.13/html-to-image.min.js"></script>
 <style>
@@ -375,15 +375,29 @@
       <p class="text-xs text-slate-400 mt-1">Default nonaktif — kalau perlu emoji di slide tertentu, tinggal ketik manual di teks editor.</p>
     </div>
 
+    <!-- PILIHAN FONT -->
+    <div class="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+      <label class="block text-sm font-semibold mb-2">Gaya Font</label>
+      <select id="fontPairSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        <option value="poppins-calibri" selected>Klasik — Poppins + Calibri (default lama)</option>
+        <option value="poppins-inter">Modern — Poppins + Inter</option>
+        <option value="montserrat-source">Bold Editorial — Montserrat + Source Sans</option>
+        <option value="playfair-lora">Elegan — Playfair Display + Lora</option>
+        <option value="space-work">Minimalis — Space Grotesk + Work Sans</option>
+        <option value="merriweather-nunito">Klasik — Merriweather + Nunito Sans</option>
+      </select>
+      <p class="text-xs text-slate-400 mt-1.5">Font judul (heading) & isi teks di semua slide. Ganti font perlu generate ulang / klik "Terapkan Warna" agar preview slide yang sudah ada ikut ter-update.</p>
+    </div>
+
     <!-- PERATAAN TEKS DEFAULT -->
     <div class="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
       <label class="block text-sm font-semibold mb-2">Perataan Teks Default</label>
       <div class="grid grid-cols-3 gap-2">
         <label class="flex items-center justify-center border border-slate-300 rounded-lg py-2 text-sm cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-          <input type="radio" name="defaultTextAlign" value="left" class="hidden">Kiri
+          <input type="radio" name="defaultTextAlign" value="left" checked class="hidden">Kiri
         </label>
         <label class="flex items-center justify-center border border-slate-300 rounded-lg py-2 text-sm cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
-          <input type="radio" name="defaultTextAlign" value="center" checked class="hidden">Tengah
+          <input type="radio" name="defaultTextAlign" value="center" class="hidden">Tengah
         </label>
         <label class="flex items-center justify-center border border-slate-300 rounded-lg py-2 text-sm cursor-pointer has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50">
           <input type="radio" name="defaultTextAlign" value="right" class="hidden">Kanan
@@ -526,7 +540,7 @@
         <label class="flex items-center justify-between gap-2 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 cursor-pointer">
           <span>Paksa AI pakai warna manual ini sebagai acuan utama</span>
           <span class="toggle-switch shrink-0">
-            <input id="useManualColors" type="checkbox" class="hidden">
+            <input id="useManualColors" type="checkbox" checked class="hidden">
             <span class="toggle-track"><span class="toggle-thumb"></span></span>
           </span>
         </label>
@@ -582,7 +596,7 @@
       <label class="block text-xs text-slate-500 mb-1">Posisi Watermark</label>
       <select id="watermarkPositionSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 mb-2">
         <option value="top-left">Kiri Atas</option>
-        <option value="top-center">Tengah Atas</option>
+        <option value="top-center" selected>Tengah Atas</option>
         <option value="top-right">Kanan Atas</option>
         <option value="bottom-left">Kiri Bawah</option>
         <option value="bottom-center">Tengah Bawah</option>
@@ -603,17 +617,17 @@
       <label class="block text-sm font-semibold mb-2">Mode Generate</label>
       <div class="flex flex-wrap gap-1.5">
         <label class="seg-pill has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700">
-          <input type="radio" name="generateMode" value="per-slide" checked class="hidden"
+          <input type="radio" name="generateMode" value="per-slide" class="hidden"
             data-desc="Lebih stabil — 1 slide = 1 request. Kalau ada gambar, mode ini disarankan.">
           Per-Slide
         </label>
         <label class="seg-pill has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700">
-          <input type="radio" name="generateMode" value="combined" class="hidden"
+          <input type="radio" name="generateMode" value="combined" checked class="hidden"
             data-desc="Hemat kuota harian (RPD) — semua slide = 1 request. Kalau gagal/kepotong, SEMUA slide gagal bareng.">
           Sekaligus
         </label>
       </div>
-      <p id="generateModeDesc" class="seg-pill-desc text-xs text-slate-400 mt-1.5">Lebih stabil — 1 slide = 1 request. Kalau ada gambar, mode ini disarankan.</p>
+      <p id="generateModeDesc" class="seg-pill-desc text-xs text-slate-400 mt-1.5">Hemat kuota harian (RPD) — semua slide = 1 request. Kalau gagal/kepotong, SEMUA slide gagal bareng.</p>
     </div>
 
     <div class="sticky bottom-0 -mx-5 px-5 pt-3 pb-1 bg-white border-t border-slate-200 mt-2">
@@ -731,13 +745,15 @@
       </div>
 
       <div>
-        <p class="font-semibold text-slate-900 mb-1.5">Geser Posisi (gratis, tanpa panggil AI)</p>
+        <p class="font-semibold text-slate-900 mb-1.5">Geser & Ukuran Gambar (gratis, tanpa panggil AI)</p>
         <p class="text-xs text-slate-500 mb-1.5">Ketik di kolom instruksi "Update" per-slide, contoh:</p>
         <div class="grid grid-cols-1 gap-1 text-xs">
           <div class="border border-slate-200 rounded-lg px-2.5 py-1.5"><code class="bg-slate-100 px-1.5 py-0.5 rounded">geser teks ke atas 2 enter</code></div>
           <div class="border border-slate-200 rounded-lg px-2.5 py-1.5"><code class="bg-slate-100 px-1.5 py-0.5 rounded">geser gambar ke kanan 3 tab</code></div>
+          <div class="border border-slate-200 rounded-lg px-2.5 py-1.5"><code class="bg-slate-100 px-1.5 py-0.5 rounded">perbesar gambar 10</code></div>
+          <div class="border border-slate-200 rounded-lg px-2.5 py-1.5"><code class="bg-slate-100 px-1.5 py-0.5 rounded">perkecil gambar 15</code></div>
         </div>
-        <p class="text-xs text-slate-400 mt-1.5">1 layar ≈ 10 enter (vertikal) / 10 tab (horizontal).</p>
+        <p class="text-xs text-slate-400 mt-1.5">1 layar ≈ 10 enter (vertikal) / 10 tab (horizontal). Angka di "perbesar/perkecil gambar" = persen ukuran (boleh diulang beberapa kali, & boleh tanpa angka = default 10%).</p>
       </div>
     </div>
   </div>
@@ -752,6 +768,18 @@
   let EXPORT_HEIGHT = 1350;
   let PREVIEW_SCALE = PREVIEW_WIDTH / EXPORT_WIDTH;
   let PREVIEW_HEIGHT = EXPORT_HEIGHT * PREVIEW_SCALE;
+
+  // ---------- PILIHAN FONT ----------
+  const FONT_PAIRS = {
+    'poppins-calibri':      { heading: "'Poppins', 'Calibri', sans-serif",           body: "'Calibri', sans-serif" },
+    'poppins-inter':        { heading: "'Poppins', 'Inter', sans-serif",           body: "'Inter', sans-serif" },
+    'montserrat-source':    { heading: "'Montserrat', 'Inter', sans-serif",        body: "'Source Sans 3', sans-serif" },
+    'playfair-lora':        { heading: "'Playfair Display', 'Georgia', serif",     body: "'Lora', serif" },
+    'space-work':           { heading: "'Space Grotesk', 'Inter', sans-serif",     body: "'Work Sans', sans-serif" },
+    'merriweather-nunito':  { heading: "'Merriweather', 'Georgia', serif",         body: "'Nunito Sans', sans-serif" }
+  };
+  let HEADING_FONT = FONT_PAIRS['poppins-calibri'].heading;
+  let BODY_FONT = FONT_PAIRS['poppins-calibri'].body;
 
   function applyChosenRatio(){
     const ratio = document.querySelector('input[name="slideRatio"]:checked').value;
@@ -825,6 +853,16 @@
   bindSegPillCaptions('textureMode', 'textureModeDesc');
   bindSegPillCaptions('generateMode', 'generateModeDesc');
 
+  // ---------- FONT PAIR ----------
+  const fontPairSelect = document.getElementById('fontPairSelect');
+  fontPairSelect.addEventListener('change', () => {
+    const pair = FONT_PAIRS[fontPairSelect.value] || FONT_PAIRS['poppins-calibri'];
+    HEADING_FONT = pair.heading;
+    BODY_FONT = pair.body;
+    // re-render preview slide yang sudah punya desain, supaya langsung kelihatan tanpa perlu generate ulang
+    slides.forEach((s, i) => { if (s.design) renderSlidePreview(i); });
+  });
+
   const dropZone = document.getElementById('dropZone');
   const dropZoneText = document.getElementById('dropZoneText');
   const sampleImgInput = document.getElementById('sampleImgInput');
@@ -839,6 +877,83 @@
   const wmNameFacebook = document.getElementById('wmNameFacebook');
   const wmNameTiktok = document.getElementById('wmNameTiktok');
   const watermarkPreview = document.getElementById('watermarkPreview');
+
+  // ---------- SIMPAN & MUAT PENGATURAN TERAKHIR (localStorage, di perangkat ini saja) ----------
+  const SETTINGS_STORAGE_KEY = 'mecar_settings_v1';
+  const SETTINGS_RADIO_GROUPS = ['slideRatio','textColorMode','accentColorMode','gradientMode','textureMode','generateMode','defaultTextAlign'];
+  const SETTINGS_TEXT_IDS = ['variationTextColorHex','manualBgHex','manualTextHex','manualAccentHex','wmNameInstagram','wmNameFacebook','wmNameTiktok','watermarkInput'];
+  const SETTINGS_CHECKBOX_IDS = ['useManualColors','wmPlatformInstagram','wmPlatformFacebook','wmPlatformTiktok'];
+  const SETTINGS_SELECT_IDS = ['watermarkPositionSelect','fontPairSelect'];
+  const SETTINGS_RANGE_IDS = ['accentIntensitySlider'];
+  const SETTINGS_CAPTION_MAP = { textColorMode:'textColorModeDesc', accentColorMode:'accentColorModeDesc', gradientMode:'gradientModeDesc', textureMode:'textureModeDesc', generateMode:'generateModeDesc' };
+
+  function collectSettings(){
+    const s = { radios:{}, texts:{}, checks:{}, selects:{}, ranges:{} };
+    SETTINGS_RADIO_GROUPS.forEach(name => {
+      const el = document.querySelector(`input[name="${name}"]:checked`);
+      if (el) s.radios[name] = el.value;
+    });
+    SETTINGS_TEXT_IDS.forEach(id => { const el = document.getElementById(id); if (el) s.texts[id] = el.value; });
+    SETTINGS_CHECKBOX_IDS.forEach(id => { const el = document.getElementById(id); if (el) s.checks[id] = el.checked; });
+    SETTINGS_SELECT_IDS.forEach(id => { const el = document.getElementById(id); if (el) s.selects[id] = el.value; });
+    SETTINGS_RANGE_IDS.forEach(id => { const el = document.getElementById(id); if (el) s.ranges[id] = el.value; });
+    return s;
+  }
+
+  function saveSettings(){
+    try { localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(collectSettings())); } catch(e){}
+  }
+
+  function applySettings(s){
+    if (!s) return;
+    if (s.radios) Object.keys(s.radios).forEach(name => {
+      const el = document.querySelector(`input[name="${name}"][value="${CSS.escape(s.radios[name])}"]`);
+      if (el) el.checked = true;
+    });
+    if (s.texts) Object.keys(s.texts).forEach(id => { const el = document.getElementById(id); if (el) el.value = s.texts[id]; });
+    if (s.checks) Object.keys(s.checks).forEach(id => { const el = document.getElementById(id); if (el) el.checked = s.checks[id]; });
+    if (s.selects) Object.keys(s.selects).forEach(id => { const el = document.getElementById(id); if (el) el.value = s.selects[id]; });
+    if (s.ranges) Object.keys(s.ranges).forEach(id => { const el = document.getElementById(id); if (el) el.value = s.ranges[id]; });
+
+    // sinkronkan efek samping dari value mentah yang dipulihkan
+    if (s.texts && s.texts.variationTextColorHex) variationTextColor.value = s.texts.variationTextColorHex;
+    if (s.texts && s.texts.manualBgHex) manualBg.value = s.texts.manualBgHex;
+    if (s.texts && s.texts.manualTextHex) manualText.value = s.texts.manualTextHex;
+    if (s.texts && s.texts.manualAccentHex) manualAccent.value = s.texts.manualAccentHex;
+    if (s.selects && s.selects.fontPairSelect){
+      const pair = FONT_PAIRS[s.selects.fontPairSelect] || FONT_PAIRS['poppins-calibri'];
+      HEADING_FONT = pair.heading; BODY_FONT = pair.body;
+    }
+    if (s.ranges && s.ranges.accentIntensitySlider) accentIntensityValue.textContent = s.ranges.accentIntensitySlider;
+    accentIntensityWrap.classList.toggle('hidden', (s.radios && s.radios.accentColorMode) !== 'background');
+
+    // update caption pill segmented supaya sesuai pilihan yang dipulihkan
+    Object.keys(SETTINGS_CAPTION_MAP).forEach(name => {
+      const checked = document.querySelector(`input[name="${name}"]:checked`);
+      const caption = document.getElementById(SETTINGS_CAPTION_MAP[name]);
+      if (checked && caption && checked.dataset.desc) caption.textContent = checked.dataset.desc;
+    });
+
+    applyChosenRatio();
+  }
+
+  function loadSettings(){
+    try {
+      const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (raw) applySettings(JSON.parse(raw));
+    } catch(e){}
+  }
+
+  function attachSettingsAutosave(){
+    const allIds = [...SETTINGS_TEXT_IDS, ...SETTINGS_CHECKBOX_IDS, ...SETTINGS_SELECT_IDS, ...SETTINGS_RANGE_IDS];
+    allIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', saveSettings);
+    });
+    SETTINGS_RADIO_GROUPS.forEach(name => {
+      document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', saveSettings));
+    });
+  }
 
   // ---------- AI PROVIDER DEFINITIONS ----------
   const PROVIDER_DEFS = {
@@ -953,6 +1068,10 @@
     // kelanjutan bullet/nomor pas Enter, dst) secara eksplisit cek tag <p> -- kalau baris baru
     // malah jadi <div>, cek itu diam-diam gagal dan fitur-fitur itu kelihatan "tidak berfungsi".
     try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch(e){}
+
+    // muat pengaturan (desain, watermark, font, dll) dari pemakaian terakhir di perangkat ini
+    loadSettings();
+    attachSettingsAutosave();
 
     let loaded = null;
     try {
@@ -2597,29 +2716,29 @@ Aturan wajib lainnya:
     const rgba = (a) => `rgba(${r},${g},${b},${a})`;
     if (mode === 'dots'){
       return {
-        backgroundImage: `radial-gradient(${rgba(0.55)} 1.4px, transparent 1.6px)`,
+        backgroundImage: `radial-gradient(${rgba(0.85)} 1.6px, transparent 1.8px)`,
         backgroundSize: '15px 15px',
         backgroundPosition: '0 0',
-        opacity: 0.16,
-        mixBlendMode: 'overlay'
+        opacity: 0.32,
+        mixBlendMode: 'multiply'
       };
     }
     if (mode === 'halftone'){
       return {
-        backgroundImage: `radial-gradient(${rgba(0.6)} 2.6px, transparent 3px), radial-gradient(${rgba(0.6)} 2.6px, transparent 3px)`,
+        backgroundImage: `radial-gradient(${rgba(0.85)} 2.8px, transparent 3.2px), radial-gradient(${rgba(0.85)} 2.8px, transparent 3.2px)`,
         backgroundSize: '32px 32px, 32px 32px',
         backgroundPosition: '0 0, 16px 16px',
-        opacity: 0.14,
-        mixBlendMode: 'overlay'
+        opacity: 0.28,
+        mixBlendMode: 'multiply'
       };
     }
     if (mode === 'lines'){
       return {
-        backgroundImage: `repeating-linear-gradient(45deg, ${rgba(0.5)} 0px, ${rgba(0.5)} 1.5px, transparent 1.5px, transparent 9px)`,
+        backgroundImage: `repeating-linear-gradient(45deg, ${rgba(0.75)} 0px, ${rgba(0.75)} 1.6px, transparent 1.6px, transparent 9px)`,
         backgroundSize: 'auto',
         backgroundPosition: '0 0',
-        opacity: 0.14,
-        mixBlendMode: 'overlay'
+        opacity: 0.26,
+        mixBlendMode: 'multiply'
       };
     }
     if (mode === 'noise'){
@@ -2646,7 +2765,7 @@ Aturan wajib lainnya:
     canvas.style.position = 'relative';
     canvas.style.overflow = 'hidden';
     canvas.style.boxSizing = 'border-box';
-    canvas.style.fontFamily = "'Calibri', sans-serif";
+    canvas.style.fontFamily = BODY_FONT;
     canvas.dir = 'ltr'; // netral -- arah RTL/LTR ditentukan per-blok teks di bawah, bukan level kanvas
                          // (supaya elemen UI seperti watermark/dots tidak ikut kebalik kalau ADA blok Arab)
 
@@ -2918,16 +3037,17 @@ Aturan wajib lainnya:
       frameShadowWrap.appendChild(frameBox);
 
       let frameW, frameH;
+      const imgScale = design.image_scale || 1;
       if (edgeFramePlacement.position === 'left'){
-        frameW = safeWidth * sizePct / 100; frameH = safeHeight;
+        frameW = safeWidth * sizePct / 100 * imgScale; frameH = safeHeight;
         frameShadowWrap.style.left = '0px'; frameShadowWrap.style.top = '0px';
         edgeFrameSizePx = frameW;
       } else if (edgeFramePlacement.position === 'right'){
-        frameW = safeWidth * sizePct / 100; frameH = safeHeight;
+        frameW = safeWidth * sizePct / 100 * imgScale; frameH = safeHeight;
         frameShadowWrap.style.right = '0px'; frameShadowWrap.style.top = '0px';
         edgeFrameSizePx = frameW;
       } else { // bottom (default)
-        frameW = safeWidth; frameH = safeHeight * sizePct / 100;
+        frameW = safeWidth; frameH = safeHeight * sizePct / 100 * imgScale;
         frameShadowWrap.style.left = '0px'; frameShadowWrap.style.bottom = '0px';
         edgeFrameSizePx = frameH;
       }
@@ -3001,7 +3121,7 @@ Aturan wajib lainnya:
       // blok teks lain, pola Judul-gambar-Keterangan, jarak 1 enter ke blok di atas & bawahnya.
       if (block.role === 'image-slot'){
         const slotSizePct = block.size_pct || 35;
-        const slotHeightPx = safeHeight * slotSizePct / 100;
+        const slotHeightPx = safeHeight * slotSizePct / 100 * (design.image_scale || 1);
         const slotShadowWrap = document.createElement('div');
         slotShadowWrap.style.position = 'relative';
         slotShadowWrap.style.width = '100%';
@@ -3128,7 +3248,7 @@ Aturan wajib lainnya:
           markerEl.style.fontWeight = 'bold';
           markerEl.style.fontSize = resolvedFontSize + 'px';
           markerEl.style.flexShrink = '0';
-          markerEl.style.fontFamily = "'Calibri', sans-serif";
+          markerEl.style.fontFamily = BODY_FONT;
           markerEl.style.color = design.text_color || '#111111';
           blockRow.appendChild(markerEl);
         }
@@ -3149,12 +3269,12 @@ Aturan wajib lainnya:
           lineWrap.style.flex = '0 1 auto'; // JANGAN grow (biar teks pendek tetap ringkas & rata tengah), tapi BOLEH shrink & wrap
           lineWrap.style.minWidth = '0';
         }
-        // Judul (bukan Arab) pakai Poppins -- font display yang lebih tegas/khas, biar ada
+        // Judul (bukan Arab) pakai font heading -- font display yang lebih tegas/khas, biar ada
         // hierarki tipografi berlapis (tidak semua ukuran pakai font yang sama persis).
-        // Teks Arab & body/caption tetap Calibri (yang sudah terbukti aman buat rendering Arab).
+        // Teks Arab & body/caption tetap pakai font body (browser otomatis substitusi glyph Arab kalau font body tidak mendukungnya).
         lineWrap.style.fontFamily = (block.role === 'heading' && !lineIsArabic)
-          ? "'Poppins', 'Calibri', sans-serif"
-          : "'Calibri', sans-serif";
+          ? HEADING_FONT
+          : BODY_FONT;
         // PENTING: justify-content di blockRow cuma ngatur posisi ITEM (span) sebagai satu kesatuan,
         // TIDAK ngatur perataan baris-baris hasil wrap DI DALAM span itu sendiri kalau teksnya panjang.
         // Makanya text-align eksplisit wajib di-set di sini juga, supaya teks panjang yang wrap ke
@@ -3193,7 +3313,7 @@ Aturan wajib lainnya:
     if (hasWatermarkContent){
       const wm = buildWatermarkNode(wmConfig, design.text_color || '#111111', design.accent_color || '#6366f1');
       wm.style.position = 'absolute';
-      wm.style.fontFamily = "'Calibri', sans-serif";
+      wm.style.fontFamily = BODY_FONT;
       wm.style.fontSize = '32px';
       wm.style.fontWeight = '700';
       wm.style.letterSpacing = '0.5px';
@@ -3301,13 +3421,13 @@ Aturan wajib lainnya:
         <div class="border border-slate-200 rounded-lg p-2.5 bg-slate-50/60">
           <div class="flex items-center justify-between mb-1.5">
             <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">🔁 Revisi Cepat</span>
-            <span class="text-slate-400 cursor-help text-xs" title="Ketik instruksi bebas (mis. &quot;taruh gambar di bawah&quot;) lalu klik Update -- akan diproses AI. Instruksi geser posisi bisa diketik gratis TANPA AI: &quot;geser teks ke atas 2 enter&quot; atau &quot;geser gambar ke kanan 3 tab&quot; (1 layar = 10 enter/tab).">ⓘ</span>
+            <span class="text-slate-400 cursor-help text-xs" title="Ketik instruksi bebas (mis. &quot;taruh gambar di bawah&quot;) lalu klik Update -- akan diproses AI. Instruksi berikut diketik gratis TANPA AI: &quot;geser teks ke atas 2 enter&quot;, &quot;geser gambar ke kanan 3 tab&quot; (1 layar = 10 enter/tab), &quot;perbesar gambar 10&quot;, &quot;perkecil gambar 15&quot;.">ⓘ</span>
           </div>
           <div class="flex items-center gap-2">
             <input id="content-image-input-${index}" type="file" accept="image/*" class="hidden">
             <button id="content-image-btn-${index}" type="button" title="Lampirkan gambar konten (opsional)"
               class="shrink-0 w-9 h-9 flex items-center justify-center border border-slate-300 bg-white rounded-lg text-sm hover:bg-slate-100 transition-colors">🖼️</button>
-            <input id="revise-input-${index}" type="text" placeholder="mis. taruh gambar di bawah, geser teks ke atas 2 enter..."
+            <input id="revise-input-${index}" type="text" placeholder="mis. taruh gambar di bawah, perbesar gambar 10..."
               class="flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400">
             <button id="revise-btn-${index}" class="shrink-0 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-40 transition-colors" disabled>
               Update
@@ -3398,6 +3518,13 @@ Aturan wajib lainnya:
     const frame = document.getElementById(`slide-frame-${index}`);
     // buang canvas lama (jika ada), sisakan div loading
     Array.from(frame.querySelectorAll('.slide-canvas')).forEach(n => n.remove());
+
+    // set ulang dimensi frame tiap render (bukan cuma sekali saat kartu dibuat) --
+    // supaya selalu sinkron dengan rasio EXPORT_WIDTH/HEIGHT saat ini, dan dikasih
+    // sedikit buffer pembulatan ke atas supaya elemen di tepi bawah (dots/arrow)
+    // tidak kepotong gara-gara sisa pembulatan sub-pixel dari transform:scale().
+    frame.style.width = PREVIEW_WIDTH + 'px';
+    frame.style.height = Math.ceil(EXPORT_HEIGHT * PREVIEW_SCALE) + 2 + 'px';
 
     const design = slides[index].design;
     const rawText = slides[index].rawText;
@@ -3893,6 +4020,28 @@ Aturan wajib lainnya:
   }
 
   const GESER_REGEX = /geser\s+(teks|gambar)\s+ke\s+(atas|bawah|kiri|kanan)\s+(\d+)\s*(enter|tab)/i;
+  const RESIZE_REGEX = /(perbesar|perkecil)\s+gambar(?:\s+(\d+))?/i;
+
+  // Coba tangani instruksi "perbesar/perkecil gambar ..." langsung lewat kode (gratis, 0 token API).
+  function tryApplyResizeInstruction(index, instruction){
+    const match = instruction.match(RESIZE_REGEX);
+    if (!match) return false;
+    if (!slides[index].design){
+      showSidebarError('Slide ini belum memiliki desain, klik "Coba Lagi" dulu.');
+      return true;
+    }
+
+    const [, dir, amountStr] = match;
+    const amount = amountStr ? parseInt(amountStr, 10) : 10; // default step 10% kalau angka tidak disebut
+    const design = slides[index].design;
+    const currentScale = design.image_scale || 1;
+    const deltaScale = (dir.toLowerCase() === 'perbesar' ? amount : -amount) / 100;
+    design.image_scale = Math.min(3, Math.max(0.3, currentScale + deltaScale)); // batas wajar 30%-300%
+
+    renderSlidePreview(index);
+    document.getElementById(`revise-input-${index}`).value = '';
+    return true;
+  }
 
   // Coba tangani instruksi "geser ..." langsung lewat kode (gratis, 0 token API).
   // Return true kalau instruksinya cocok & berhasil diproses (reviseSlide berhenti di sini,
@@ -3933,7 +4082,8 @@ Aturan wajib lainnya:
     const contentImage = slides[index].contentImage;
     if (!instruction && !contentImage) return;
 
-    // instruksi "geser ..." ditangani lokal (gratis, 0 token API), tidak perlu API key sama sekali
+    // instruksi "geser ..." / "perbesar|perkecil gambar ..." ditangani lokal (gratis, 0 token API), tidak perlu API key sama sekali
+    if (instruction && tryApplyResizeInstruction(index, instruction)) return;
     if (instruction && tryApplyGeserInstruction(index, instruction)) return;
 
     if (!hasAnyApiKey()){
