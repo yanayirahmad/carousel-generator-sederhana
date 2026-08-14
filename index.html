@@ -346,23 +346,30 @@
           Polos
         </label>
         <label class="seg-pill has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700">
-          <input type="radio" name="textureMode" value="dots" class="hidden" data-desc="Tekstur titik-titik halus di atas background.">
-          Dots
-        </label>
-        <label class="seg-pill has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700">
-          <input type="radio" name="textureMode" value="halftone" class="hidden" data-desc="Tekstur halftone (pola titik gaya cetak).">
-          Halftone
-        </label>
-        <label class="seg-pill has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700">
-          <input type="radio" name="textureMode" value="lines" class="hidden" data-desc="Tekstur garis-garis halus.">
-          Garis-garis
-        </label>
-        <label class="seg-pill has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700">
           <input type="radio" name="textureMode" value="noise" class="hidden" data-desc="Tekstur noise/pasir halus.">
           Noise/Pasir
         </label>
       </div>
-      <p id="textureModeDesc" class="seg-pill-desc text-xs text-slate-400 mt-1.5">Mode AI — AI bebas pilih dekorasi sebagai pemanis permukaan (perilaku default). Tekstur "Kertas Kusut/Fabric/Watercolor" belum tersedia -- butuh aset gambar tambahan, menyusul.</p>
+      <p id="textureModeDesc" class="seg-pill-desc text-xs text-slate-400 mt-1.5">Mode AI — AI bebas pilih dekorasi sebagai pemanis permukaan (perilaku default).</p>
+    </div>
+
+    <!-- GAYA DEKORASI -->
+    <div class="mb-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
+      <label class="block text-sm font-semibold mb-2">Gaya Dekorasi</label>
+      <p class="text-xs text-slate-400 mb-2">Elemen hias yang ditambahkan AI di atas slide. Beda dengan "Tekstur Background" di atas yang cuma permukaan.</p>
+      <div class="flex flex-wrap gap-1.5">
+        <label class="seg-pill has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700">
+          <input type="radio" name="decorationMode" value="minimal" checked class="hidden"
+            data-desc="Modern minimalis — cuma garis tipis, gelombang halus, & titik-titik kecil (dots-grid). Tidak ada lingkaran/kotak/blob besar.">
+          Modern Minimalis
+        </label>
+        <label class="seg-pill has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700">
+          <input type="radio" name="decorationMode" value="none" class="hidden"
+            data-desc="Tanpa dekorasi sama sekali — dijamin polos, tidak tergantung AI.">
+          Tanpa Dekorasi
+        </label>
+      </div>
+      <p id="decorationModeDesc" class="seg-pill-desc text-xs text-slate-400 mt-1.5">Modern minimalis — cuma garis tipis, gelombang halus, & titik-titik kecil (dots-grid). Tidak ada lingkaran/kotak/blob besar.</p>
     </div>
 
 
@@ -851,7 +858,16 @@
   bindSegPillCaptions('accentColorMode', 'accentColorModeDesc');
   bindSegPillCaptions('gradientMode', 'gradientModeDesc');
   bindSegPillCaptions('textureMode', 'textureModeDesc');
+  bindSegPillCaptions('decorationMode', 'decorationModeDesc');
   bindSegPillCaptions('generateMode', 'generateModeDesc');
+
+  // ---------- REFRESH LIVE (tanpa panggil AI) ----------
+  // Setting yang murni soal TAMPILAN (bukan keputusan konten yang butuh AI, kayak decorations/
+  // emphasis_phrases) bisa langsung di-refresh ke semua slide yang sudah py desain begitu
+  // setting-nya diubah -- sama seperti gaya font. Dipakai oleh semua listener di bawah.
+  function refreshAllRenderedSlides(){
+    slides.forEach((s, i) => { if (s.design) renderSlidePreview(i); });
+  }
 
   // ---------- FONT PAIR ----------
   const fontPairSelect = document.getElementById('fontPairSelect');
@@ -860,7 +876,7 @@
     HEADING_FONT = pair.heading;
     BODY_FONT = pair.body;
     // re-render preview slide yang sudah punya desain, supaya langsung kelihatan tanpa perlu generate ulang
-    slides.forEach((s, i) => { if (s.design) renderSlidePreview(i); });
+    refreshAllRenderedSlides();
   });
 
   const dropZone = document.getElementById('dropZone');
@@ -878,14 +894,36 @@
   const wmNameTiktok = document.getElementById('wmNameTiktok');
   const watermarkPreview = document.getElementById('watermarkPreview');
 
+  // Setting di bawah ini SUDAH dibaca fresh tiap kali slide di-render (lihat buildSlideCanvasNode
+  // utk text_align, getFontSizeSetting, getTextureModeValue, variationTextColorHex.value,
+  // getWatermarkConfig) -- jadi tinggal di-refresh begitu diubah, TANPA panggil AI, sama seperti
+  // gaya font. Beda dengan setting lain (mis. mode warna teks/gaya dekorasi) yang ikut menentukan
+  // KEPUTUSAN KONTEN dari AI (emphasis_phrases/decorations) -- itu tetap butuh generate ulang.
+  document.querySelectorAll('input[name="defaultTextAlign"]').forEach(el => {
+    el.addEventListener('change', refreshAllRenderedSlides);
+  });
+  ['fontSizeJudulInput', 'fontSizeIsiInput', 'fontSizeCatatanInput'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', refreshAllRenderedSlides);
+  });
+  document.querySelectorAll('input[name="textureMode"]').forEach(el => {
+    el.addEventListener('change', refreshAllRenderedSlides);
+  });
+  variationTextColor.addEventListener('input', refreshAllRenderedSlides);
+  variationTextColorHex.addEventListener('input', refreshAllRenderedSlides);
+  [watermarkInput, watermarkPositionSelect, wmNameInstagram, wmNameFacebook, wmNameTiktok, wmPlatformInstagram, wmPlatformFacebook, wmPlatformTiktok].forEach(el => {
+    el.addEventListener('input', refreshAllRenderedSlides);
+    el.addEventListener('change', refreshAllRenderedSlides);
+  });
+
   // ---------- SIMPAN & MUAT PENGATURAN TERAKHIR (localStorage, di perangkat ini saja) ----------
   const SETTINGS_STORAGE_KEY = 'mecar_settings_v1';
-  const SETTINGS_RADIO_GROUPS = ['slideRatio','textColorMode','accentColorMode','gradientMode','textureMode','generateMode','defaultTextAlign'];
+  const SETTINGS_RADIO_GROUPS = ['slideRatio','textColorMode','accentColorMode','gradientMode','textureMode','decorationMode','generateMode','defaultTextAlign'];
   const SETTINGS_TEXT_IDS = ['variationTextColorHex','manualBgHex','manualTextHex','manualAccentHex','wmNameInstagram','wmNameFacebook','wmNameTiktok','watermarkInput'];
   const SETTINGS_CHECKBOX_IDS = ['useManualColors','wmPlatformInstagram','wmPlatformFacebook','wmPlatformTiktok'];
   const SETTINGS_SELECT_IDS = ['watermarkPositionSelect','fontPairSelect'];
   const SETTINGS_RANGE_IDS = ['accentIntensitySlider'];
-  const SETTINGS_CAPTION_MAP = { textColorMode:'textColorModeDesc', accentColorMode:'accentColorModeDesc', gradientMode:'gradientModeDesc', textureMode:'textureModeDesc', generateMode:'generateModeDesc' };
+  const SETTINGS_CAPTION_MAP = { textColorMode:'textColorModeDesc', accentColorMode:'accentColorModeDesc', gradientMode:'gradientModeDesc', textureMode:'textureModeDesc', decorationMode:'decorationModeDesc', generateMode:'generateModeDesc' };
 
   function collectSettings(){
     const s = { radios:{}, texts:{}, checks:{}, selects:{}, ranges:{} };
@@ -1148,6 +1186,50 @@
     sidebarError.textContent = '';
   }
   function containsArabic(text){ return ARABIC_REGEX.test(text); }
+  // Pecah `text` jadi sub-segmen {text, emphasized} berdasarkan daftar frasa yang harus diberi
+  // warna penekanan (emphasis_phrases dari AI). Pencocokan case-insensitive (AI kadang beda
+  // kapitalisasi dikit dari teks asli). Frasa lebih panjang diproses lebih dulu supaya tidak
+  // "dimakan" duluan oleh frasa pendek yang kebetulan jadi substring-nya.
+  function splitTextByPhrases(text, phrases){
+    if (!phrases || !phrases.length) return [{ text, emphasized: false }];
+    const sorted = phrases.filter(p => p && p.trim()).sort((a, b) => b.length - a.length);
+    if (!sorted.length) return [{ text, emphasized: false }];
+    let result = [{ text, emphasized: false }];
+    sorted.forEach(phrase => {
+      const lowerPhrase = phrase.toLowerCase();
+      const next = [];
+      result.forEach(part => {
+        if (part.emphasized || !part.text){ next.push(part); return; }
+        const lowerPart = part.text.toLowerCase();
+        let cursor = 0, idx = lowerPart.indexOf(lowerPhrase);
+        if (idx === -1){ next.push(part); return; }
+        while (idx !== -1){
+          if (idx > cursor) next.push({ text: part.text.slice(cursor, idx), emphasized: false });
+          next.push({ text: part.text.slice(idx, idx + phrase.length), emphasized: true });
+          cursor = idx + phrase.length;
+          idx = lowerPart.indexOf(lowerPhrase, cursor);
+        }
+        if (cursor < part.text.length) next.push({ text: part.text.slice(cursor), emphasized: false });
+      });
+      result = next;
+    });
+    return result.filter(p => p.text.length > 0);
+  }
+  // PERMINTAAN USER: sebelumnya "ada 1 simbol Arab" langsung memicu RTL/perlakuan-khusus-Arab
+  // walau teksnya campuran & didominasi Latin (contoh: "makna kata رحمة adalah kasih sayang").
+  // Sekarang harus dihitung dulu siapa yang DOMINAN: hitung jumlah huruf Arab vs huruf Latin
+  // (spasi/angka/tanda baca/emoji diabaikan) -- RTL/ukuran-font-khusus-Arab HANYA aktif kalau
+  // huruf Arab lebih banyak dari huruf Latin di teks tsb. Kalau Latin yang dominan (walau ada
+  // sisipan kata/frasa Arab), tetap dianggap LTR biasa.
+  const ARABIC_LETTER_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
+  const LATIN_LETTER_REGEX = /[A-Za-z\u00C0-\u024F]/g;
+  function isArabicDominant(text){
+    if (!text) return false;
+    const arabicCount = (text.match(ARABIC_LETTER_REGEX) || []).length;
+    if (arabicCount === 0) return false;
+    const latinCount = (text.match(LATIN_LETTER_REGEX) || []).length;
+    return arabicCount > latinCount;
+  }
 
   // ---- WATERMARK PLATFORM (Instagram/Facebook/TikTok) ----
   // Ikon dibuat monokrom & disederhanakan (bukan reproduksi persis logo resmi berwarna),
@@ -2315,6 +2397,7 @@
     const variationColorHex = variationTextColorHex.value || '#6366f1';
     const isBatch = batchCount && batchCount > 1;
     const gradientMode = document.querySelector('input[name="gradientMode"]:checked').value;
+    const decorationMode = getDecorationModeValue();
     const emojiAllowed = enableEmojiIcon.checked;
     return `Anda adalah seorang Art Director & Graphic Designer profesional yang mendesain slide carousel Instagram berukuran ${EXPORT_WIDTH}x${EXPORT_HEIGHT}px (rasio ${ratioLabel}), dengan gaya editorial modern (mirip desain carousel edukasi/motivasi populer: tipografi berlapis, ada penekanan visual, tidak monoton).
 Kanvas kali ini berukuran ${EXPORT_WIDTH}x${EXPORT_HEIGHT}px. Sesuaikan ukuran font, padding, dan jumlah/ukuran dekorasi dengan proporsi kanvas ini (kanvas ${ratioLabel === '1:1 (persegi)' ? 'lebih pendek dari versi vertikal, jadi hindari memaksakan terlalu banyak blok teks berukuran besar agar tidak overflow' : 'cukup tinggi untuk hierarki teks yang lebih leluasa'}).
@@ -2363,7 +2446,8 @@ Tugas Anda HANYA mengembalikan ${isBatch ? 'objek JSON pembungkus "designs" di a
       "opacity": 0.15,
       "rotation_deg": 0
     }
-  ]
+  ],
+  "emphasis_phrases": ["frasa singkat 1", "frasa singkat 2"]
 }
 
 Jika ingin memakai gradient, isi "background_gradient" dengan objek {"from":"#hex","to":"#hex","direction":"to bottom"} dan "background_color" tetap diisi warna solid fallback.
@@ -2379,10 +2463,11 @@ Aturan wajib untuk "content_blocks" (INI KUNCI UTAMA agar desain terasa modern, 
 6. Kalau di teks asli ada baris yang PERSIS berisi token "[SPASI]" atau "[SPASI:angka]" (contoh: "[SPASI:300]") — ini BUKAN bagian dari kalimat, JANGAN dianggap teks biasa dan JANGAN ditampilkan sebagai teks. Ubah jadi SATU content_block khusus dengan format: {"text": "", "role": "spacer", "spacer_height_px": angka_dari_token_atau_200_jika_tidak_ada_angka, "font_size_px": 0, "font_weight": "normal", "color": null, "icon": null}. Blok ini akan dirender sebagai ruang kosong vertikal (biasanya dipakai user untuk menempel gambar sendiri secara manual di luar aplikasi, misalnya lewat Canva). Pertahankan posisi token ini persis sesuai urutan aslinya di antara blok-blok teks lain, jangan dipindah-pindah.
 6b. Kalau di teks asli ada baris yang PERSIS berisi token "[GAMBAR:tengah:angka]" (contoh: "[GAMBAR:tengah:40]") — ini BUKAN bagian dari kalimat, JANGAN ditampilkan sebagai teks. Ubah jadi SATU content_block khusus dengan format: {"text": "", "role": "image-slot", "size_pct": angka_dari_token, "font_size_px": 0, "font_weight": "normal", "color": null, "icon": null}. "size_pct" adalah angka PERSIS dari token (bukan piksel). Ini menandai TEMPAT gambar akan disisipkan di antara blok teks lain (pola umum: Judul → gambar → Keterangan). Pertahankan posisi token ini persis sesuai urutan aslinya, jangan dipindah — dan JANGAN isi "content_image_placement" untuk kasus ini (biarkan null), karena penempatannya sudah diwakili lewat posisi blok ini di "content_blocks".
 
-Aturan wajib untuk "color" (warna teks per-blok, dipakai untuk penekanan kata/frasa kunci):
+Aturan wajib untuk "emphasis_phrases" (kata/frasa kunci yang diberi warna penekanan):
+CATATAN: field "color" di dalam tiap "content_blocks" TIDAK DIPAKAI LAGI oleh sistem (selalu diabaikan) -- tetap isi null saja di semua blok, jangan dipikirkan. Penekanan warna sekarang HANYA lewat field terpisah "emphasis_phrases" di bawah ini.
 ${allowColorEmphasis
-  ? `7. WAJIB pakai warna "${variationColorHex}" (persis, jangan diganti/dimodifikasi) untuk field "color" pada 1-3 blok berisi kata/frasa kunci paling penting di slide ini, supaya kata kunci itu langsung menarik perhatian mata dan warnanya KONSISTEN sama di semua slide. Isi null untuk blok yang memakai warna teks default (text_color). JANGAN mewarnai semua blok — cukup 1-3 blok paling penting saja, sisanya null. Kalau "${variationColorHex}" ternyata kurang kontras/susah dibaca di atas background_color slide ini, sesuaikan background_color/text_color slide ini (bukan warna variasinya) supaya kombinasinya tetap enak dibaca.`
-  : `7. WAJIB isi "color": null untuk SEMUA blok tanpa terkecuali — TIDAK BOLEH ada variasi warna teks sama sekali di slide ini. Penekanan kata/frasa kunci HANYA boleh lewat font_size_px yang lebih besar dan/atau font_weight "bold", BUKAN lewat warna.`}
+  ? `7. Isi "emphasis_phrases" dengan 1-3 kata/frasa PENDEK (maksimal 4 kata per frasa) yang paling penting/menarik perhatian di slide ini -- ini akan diberi warna "${variationColorHex}" secara otomatis oleh sistem (bukan Anda yang mewarnai). WAJIB disalin PERSIS APA ADANYA (case-sensitive, verbatim substring) dari teks asli konten slide ini supaya sistem bisa mencocokkannya otomatis -- kalau frasa yang dipilih kebetulan diapit tanda format seperti "**kata**", tulis di sini TANPA tanda formatnya (cukup "kata"). Kalau tidak ada kata/frasa yang benar-benar layak ditonjolkan, boleh isi array kosong [].`
+  : `7. WAJIB isi "emphasis_phrases": [] (array kosong) — TIDAK BOLEH ada variasi warna teks sama sekali di slide ini. Penekanan kata/frasa kunci HANYA boleh lewat font_size_px yang lebih besar dan/atau font_weight "bold", BUKAN lewat warna.`}
 
 Aturan wajib untuk "content_image_placement" (HANYA untuk gambar di tepi: bawah/kiri/kanan — BUKAN untuk posisi "tengah", lihat aturan 6b di atas):
 8. Field ini HANYA diisi (bukan null) jika pesan user secara eksplisit menyebutkan ada GAMBAR KONTEN/frame gambar di tepi (bottom/left/right) untuk slide ini. Kalau frame gambarnya posisi "tengah" (lihat aturan 6b), field ini WAJIB null. Kalau tidak ada frame gambar sama sekali, WAJIB null juga.
@@ -2392,16 +2477,12 @@ Aturan wajib untuk "content_image_placement" (HANYA untuk gambar di tepi: bawah/
 
 Aturan wajib lainnya:
 12. background_color dan text_color WAJIB kontras tinggi agar teks sangat mudah dibaca.
-13. Jika teks konten mengandung karakter Arab, "is_rtl" HARUS true (ini murni soal arah baca/susunan ikon, TIDAK terkait "text_align" — nilai "text_align" akan selalu ditentukan lewat catatan tata letak terpisah di pesan user, ikuti itu apa adanya).
-14. "decorations" maksimal 5 elemen dekoratif yang mempercantik slide TANPA menutupi area teks utama, dan TANPA menutupi area "content_image_placement" jika ada. "type" boleh salah satu dari:
-    - "circle" (lingkaran solid, pakai width_px & height_px)
-    - "rectangle" (kotak, pakai width_px & height_px)
+13. "is_rtl" HARUS true HANYA kalau teks konten slide ini DIDOMINASI/mayoritas huruf Arab (bukan sekadar "mengandung" karakter Arab). Kalau teksnya CAMPURAN Latin+Arab dan Latin yang dominan (misal cuma ada 1-2 kata/istilah Arab di tengah kalimat Latin), "is_rtl" WAJIB false -- Latin diperkuat/LTR. Ini murni soal arah baca/susunan ikon, TIDAK terkait "text_align" — nilai "text_align" akan selalu ditentukan lewat catatan tata letak terpisah di pesan user, ikuti itu apa adanya.
+14. "decorations" maksimal 5 elemen dekoratif yang mempercantik slide TANPA menutupi area teks utama, dan TANPA menutupi area "content_image_placement" jika ada.${decorationMode === 'none' ? ` User memilih TANPA DEKORASI SAMA SEKALI -- WAJIB isi "decorations": [] (array kosong), jangan pernah isi elemen apapun di sini, lewati sisa aturan 14 ini.` : ` User memilih gaya MODERN MINIMALIS -- "type" HANYA boleh salah satu dari TIGA ini (JANGAN PERNAH pakai "circle", "blob", "rectangle", atau "hand-border" -- semua itu DILARANG KERAS untuk mode ini, terasa terlalu berat/kaku & kurang modern menurut user):
     - "line" (garis lurus tipis, pakai width_px sebagai panjang, height_px sebagai ketebalan)
-    - "blob" (bentuk organik melengkung acak, pakai width_px & height_px sebagai ukuran -- cocok buat aksen lembut di pojok)
     - "wave" (garis bergelombang dekoratif, pakai width_px sebagai panjang, height_px sebagai amplitudo)
-    - "dots-grid" (pola titik-titik sebagai tekstur, pakai width_px & height_px sebagai luas area pola)
-    - "hand-border" (bingkai tepi kanvas bergaya coretan tangan/wobbly, HANYA cocok dipakai 1x per slide sebagai bingkai penuh, bukan elemen kecil -- kalau dipakai, JANGAN kombinasikan sama decoration lain yang menutupi tepi kanvas)
-    VARIASIKAN kombinasi tipe per slide (jangan selalu circle semua) -- misal kombinasikan 1 blob besar transparan di pojok + 1-2 dots-grid kecil sebagai tekstur + 1 wave sebagai aksen, supaya slide terasa hidup dan modern, tidak flat/kaku.
+    - "dots-grid" (pola titik-titik kecil sebagai aksen di satu pojok/sisi, pakai width_px & height_px sebagai luas area pola -- JANGAN sampai memenuhi seluruh kanvas)
+    Cukup 1-2 elemen kecil saja per slide, jangan ramai -- kesan modern datang dari kesederhanaan, bukan banyak elemen.`}
 15. "background_gradient": ${gradientMode === 'never'
   ? `JANGAN PERNAH dipakai -- WAJIB isi null, selalu pakai "background_color" solid saja.`
   : gradientMode === 'often'
@@ -2617,17 +2698,45 @@ Aturan wajib lainnya:
     if (slides[slideIndex] && slides[slideIndex].hasStructureTags){
       design.content_blocks = slides[slideIndex].tagBlocks;
     }
+    // BUG FIX: "color" per content_block SELALU hilang karena content_blocks di atas ditimpa
+    // deterministik (tagBlocks, color selalu null) -- makanya warna penekanan sebelumnya tidak
+    // pernah muncul sama sekali. Sekarang penekanan warna lewat field terpisah "emphasis_phrases"
+    // (tidak ikut ditimpa di atas) yang dicocokkan ke teks asli saat render (lihat splitTextByPhrases).
+    if (isColorEmphasisAllowed(slideIndex)){
+      design.emphasis_phrases = Array.isArray(design.emphasis_phrases)
+        ? design.emphasis_phrases.filter(p => typeof p === 'string' && p.trim()).slice(0, 3)
+        : [];
+    } else {
+      design.emphasis_phrases = [];
+    }
     design.accent_color = resolveAccentColor(design);
     if (!enableEmojiIcon.checked && Array.isArray(design.content_blocks)){
       design.content_blocks.forEach(b => { b.icon = null; });
     }
+    // PERMINTAAN USER: mode dekorasi "Tanpa Dekorasi" WAJIB benar-benar polos, tidak boleh
+    // tergantung kepatuhan AI (AI kadang tetap nyelipin decorations meski sudah diminta kosong
+    // di prompt) -- makanya dipaksa deterministik di sini, sama seperti text_align/vertical_position.
+    if (getDecorationModeValue() === 'none'){
+      design.decorations = [];
+    }
     return design;
+  }
+
+  function getDecorationModeValue(){
+    const el = document.querySelector('input[name="decorationMode"]:checked');
+    return el ? el.value : 'minimal';
+  }
+  // Note buat AI soal gaya dekorasi -- ditambahkan ke prompt generate & revisi.
+  function decorationModeAiNote(){
+    const mode = getDecorationModeValue();
+    if (mode === 'none') return '\n\nCatatan dekorasi: user memilih TANPA DEKORASI SAMA SEKALI -- isi "decorations": [] (array kosong), jangan tambahkan elemen dekoratif apapun di slide ini.';
+    return '\n\nCatatan dekorasi: user memilih gaya dekorasi MODERN MINIMALIS -- HANYA boleh pakai "line" (garis tipis), "wave" (gelombang halus), atau "dots-grid" (titik-titik kecil di satu pojok/sisi, jangan penuhi kanvas). JANGAN PERNAH pakai "circle", "blob", "rectangle", atau "hand-border" -- semua itu dilarang untuk mode ini. Kombinasi 1-2 elemen kecil saja sudah cukup, jangan ramai.';
   }
 
   async function generateDesignForSlide(rawText, isRtlHint, slideIndex){
     const targetAlign = resolveTextAlign(slideIndex);
     const alignNote = `\n\nCatatan tata letak: "text_align" untuk slide ini WAJIB "${targetAlign}" (rata ${ALIGN_LABEL_ID[targetAlign]}). Susun komposisi teks, ikon, dan dekorasi supaya cocok dengan perataan ini.`;
-    let extra = (isRtlHint ? '\n\nCatatan: teks ini terdeteksi mengandung karakter Arab.' : '') + alignNote + textureModeAiNote();
+    let extra = (isRtlHint ? '\n\nCatatan: teks ini terdeteksi DIDOMINASI karakter Arab.' : '') + alignNote + textureModeAiNote() + decorationModeAiNote();
 
     const frame = slides[slideIndex] && slides[slideIndex].imageFrame;
     if (frame && frame.position !== 'center'){
@@ -2652,7 +2761,7 @@ Aturan wajib lainnya:
       : `Tolong kembalikan LAGI objek JSON LENGKAP dengan struktur yang sama (jangan hanya kirim bagian yang berubah), sesuaikan dengan catatan tambahan di bawah ini.`;
 
     instructionText += `\n\nCatatan tata letak: "text_align" untuk slide ini WAJIB tetap "${targetAlign}" (rata ${ALIGN_LABEL_ID[targetAlign]}).`;
-    instructionText += textureModeAiNote();
+    instructionText += textureModeAiNote() + decorationModeAiNote();
 
     if (frame && frame.position !== 'center'){
       instructionText += `\n\nCatatan gambar: slide ini punya frame gambar TETAP di posisi tepi "${frame.position}" seluas ${frame.size_pct}% kanvas (sudah dikunci lewat kode, tidak bisa diubah lewat revisi ini). WAJIB isi "content_image_placement" persis {"position":"${frame.position}","size_pct":${frame.size_pct}}.`;
@@ -2685,9 +2794,6 @@ Aturan wajib lainnya:
   // Diterapkan sebagai layer overlay tipis pakai mix-blend-mode di atas background_color/gradient
   // yang sudah dikunci -- warna background aslinya TIDAK diubah sama sekali, cuma "dikasih permukaan".
   const TEXTURE_MODE_LABELS = {
-    dots: 'pola dots (bulatan kecil rapat)',
-    halftone: 'pola halftone (dots besar-kecil bergaya cetak)',
-    lines: 'pola garis-garis diagonal tipis',
     noise: 'tekstur grain/noise butiran (seperti pasir)'
   };
   function getTextureModeValue(){
@@ -2712,43 +2818,9 @@ Aturan wajib lainnya:
   // Kembalikan {backgroundImage, backgroundSize, backgroundPosition, opacity, mixBlendMode} atau
   // null (untuk mode 'ai'/'none'/tidak dikenal -- artinya tidak ada layer tekstur sama sekali).
   function buildTextureLayerCss(mode, tintColorHex){
-    const { r, g, b } = hexToRgbParts(tintColorHex);
-    const rgba = (a) => `rgba(${r},${g},${b},${a})`;
-    if (mode === 'dots'){
-      return {
-        backgroundImage: `radial-gradient(${rgba(0.85)} 1.6px, transparent 1.8px)`,
-        backgroundSize: '15px 15px',
-        backgroundPosition: '0 0',
-        opacity: 0.32,
-        mixBlendMode: 'multiply'
-      };
-    }
-    if (mode === 'halftone'){
-      return {
-        backgroundImage: `radial-gradient(${rgba(0.85)} 2.8px, transparent 3.2px), radial-gradient(${rgba(0.85)} 2.8px, transparent 3.2px)`,
-        backgroundSize: '32px 32px, 32px 32px',
-        backgroundPosition: '0 0, 16px 16px',
-        opacity: 0.28,
-        mixBlendMode: 'multiply'
-      };
-    }
-    if (mode === 'lines'){
-      return {
-        backgroundImage: `repeating-linear-gradient(45deg, ${rgba(0.75)} 0px, ${rgba(0.75)} 1.6px, transparent 1.6px, transparent 9px)`,
-        backgroundSize: 'auto',
-        backgroundPosition: '0 0',
-        opacity: 0.26,
-        mixBlendMode: 'multiply'
-      };
-    }
     if (mode === 'noise'){
-      const rf = (r / 255).toFixed(3), gf = (g / 255).toFixed(3), bf = (b / 255).toFixed(3);
-      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'>` +
-        `<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch' result='t'/>` +
-        `<feColorMatrix in='t' type='matrix' values='0 0 0 0 ${rf} 0 0 0 0 ${gf} 0 0 0 0 ${bf} 0 0 0 0.9 0'/></filter>` +
-        `<rect width='100%' height='100%' filter='url(#n)'/></svg>`;
       return {
-        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`,
+        backgroundImage: `url("${buildNoiseTileDataUrl(tintColorHex)}")`,
         backgroundSize: '140px 140px',
         backgroundPosition: '0 0',
         opacity: 0.22,
@@ -2757,8 +2829,42 @@ Aturan wajib lainnya:
     }
     return null;
   }
+  // Tekstur noise di-generate lewat <canvas> (bukan SVG + feTurbulence lewat data URI lagi).
+  // ALASAN: html-to-image (saat proses capture/download) melakukan scan "cari semua url(...)
+  // di CSS untuk di-fetch sebagai resource" -- scan itu ikut salah menangkap referensi INTERNAL
+  // SVG kita sendiri (filter="url(#n)"), mencoba fetch-nya sebagai file eksternal, gagal, dan
+  // hasil gagalnya menimpa referensi filter itu jadi kosong (url()) -- yang bikin browser
+  // menganggap filter tsb invalid dan elemen <rect> jatuh ke warna default SVG (hitam solid),
+  // lalu warna hitam itu ke-multiply ke seluruh slide (makanya kelihatan gelap & teksturnya
+  // hilang total waktu didownload, padahal di preview normal). Pakai PNG hasil <canvas> di sini
+  // tidak mengandung teks "url(...)" sama sekali di dalamnya, jadi kebal dari bug tsb.
+  const _noiseTileCache = {};
+  function buildNoiseTileDataUrl(tintColorHex){
+    if (_noiseTileCache[tintColorHex]) return _noiseTileCache[tintColorHex];
+    const { r, g, b } = hexToRgbParts(tintColorHex);
+    const size = 140;
+    const cvs = document.createElement('canvas');
+    cvs.width = size; cvs.height = size;
+    const ctx = cvs.getContext('2d');
+    const imgData = ctx.createImageData(size, size);
+    for (let i = 0; i < imgData.data.length; i += 4){
+      imgData.data[i] = r;
+      imgData.data[i + 1] = g;
+      imgData.data[i + 2] = b;
+      imgData.data[i + 3] = Math.round(Math.random() * 0.9 * 255); // grain: alpha acak per piksel
+    }
+    ctx.putImageData(imgData, 0, 0);
+    const url = cvs.toDataURL('image/png');
+    _noiseTileCache[tintColorHex] = url;
+    return url;
+  }
 
   function buildSlideCanvasNode(design, rawText, slideIndex, totalSlides, contentImageDataUrl){
+    // PENTING (biar "Perataan Teks Default" bisa live-update tanpa panggil AI ulang): jangan
+    // percaya design.text_align yang dibekukan sejak generate -- baca ulang settingnya di sini,
+    // sama seperti pola "Ukuran Font Default" & gaya font yang sudah lebih dulu begini. Per-slide
+    // override (token [KIRI]/[TENGAH]/[KANAN] di teks) tetap dihormati lewat resolveTextAlign.
+    design.text_align = resolveTextAlign(slideIndex);
     const canvas = document.createElement('div');
     canvas.style.width = EXPORT_WIDTH + 'px';
     canvas.style.height = EXPORT_HEIGHT + 'px';
@@ -3183,7 +3289,7 @@ Aturan wajib lainnya:
         // deteksi list marker ("- item" / "1. item") di baris ini
         const listInfo = extractListMarker(lineText);
         const contentText = listInfo ? listInfo.content : lineText;
-        const lineIsArabic = containsArabic(contentText);
+        const lineIsArabic = isArabicDominant(contentText);
         const blockRow = document.createElement('div');
         blockRow.style.display = 'flex';
         blockRow.style.flexDirection = lineIsArabic ? 'row-reverse' : 'row';
@@ -3283,23 +3389,28 @@ Aturan wajib lainnya:
 
         const segments = parseInlineFormatting(contentText);
         segments.forEach(seg => {
-          const segSpan = document.createElement('span');
-          segSpan.textContent = seg.text;
-          // "color" dipakai buat penekanan kata/frasa kunci (kalau mode-nya diaktifkan) —
-          // ini murni warna teks, TANPA kotak background apapun, jadi tidak ada risiko presisi
-          // seperti kasus highlight-background yang berulang kali meleset di html2canvas.
-          segSpan.style.color = block.color || design.text_color || '#111111';
-          segSpan.style.fontWeight = lineIsArabic ? 'normal' : (seg.bold ? 'bold' : resolvedWeight);
-          segSpan.style.fontStyle = (!lineIsArabic && seg.italic) ? 'italic' : 'normal'; // Arab tidak pernah italic
-          let decoration = [];
-          if (seg.underline) decoration.push('underline');
-          if (seg.strike) decoration.push('line-through');
-          segSpan.style.textDecoration = decoration.length ? decoration.join(' ') : 'none';
-          if (seg.sup){
-            segSpan.style.verticalAlign = 'super';
-            segSpan.style.fontSize = '0.7em';
-          }
-          lineWrap.appendChild(segSpan);
+          const subParts = splitTextByPhrases(seg.text, design.emphasis_phrases);
+          subParts.forEach(part => {
+            const segSpan = document.createElement('span');
+            segSpan.textContent = part.text;
+            // "emphasized" dari pencocokan emphasis_phrases (lihat splitTextByPhrases) -- ini murni
+            // warna teks, TANPA kotak background apapun, jadi tidak ada risiko presisi seperti kasus
+            // highlight-background yang berulang kali meleset di html2canvas.
+            segSpan.style.color = part.emphasized
+              ? (variationTextColorHex.value || design.text_color || '#111111')
+              : (design.text_color || '#111111');
+            segSpan.style.fontWeight = lineIsArabic ? 'normal' : (seg.bold ? 'bold' : resolvedWeight);
+            segSpan.style.fontStyle = (!lineIsArabic && seg.italic) ? 'italic' : 'normal'; // Arab tidak pernah italic
+            let decoration = [];
+            if (seg.underline) decoration.push('underline');
+            if (seg.strike) decoration.push('line-through');
+            segSpan.style.textDecoration = decoration.length ? decoration.join(' ') : 'none';
+            if (seg.sup){
+              segSpan.style.verticalAlign = 'super';
+              segSpan.style.fontSize = '0.7em';
+            }
+            lineWrap.appendChild(segSpan);
+          });
         });
 
         blockRow.appendChild(lineWrap);
@@ -3688,12 +3799,29 @@ Aturan wajib lainnya:
     // htmlToImage (bukan lagi html2canvas): render pakai SVG <foreignObject> -> browser ASLI
     // yang menggambar (bukan reimplementasi CSS lewat JS) -> jauh lebih akurat untuk
     // flexbox/gap, SVG, dan skala gambar (object-fit, dsb).
-    const blob = await htmlToImage.toBlob(fullNode, {
+    //
+    // SUPERSAMPLING: sebelumnya di-capture pas 1:1 (pixelRatio 1) -- itu bikin gradient &
+    // tekstur (dots/halftone/noise) sedikit lebih kasar/kurang halus dibanding preview yang
+    // dirender & di-scale langsung oleh browser secara live. Sekarang di-capture 2x lebih
+    // besar dulu (pixelRatio 2) lalu di-downscale balik ke ukuran final pakai canvas 2D
+    // dengan imageSmoothingQuality 'high', supaya hasilnya jauh lebih halus & detail --
+    // gradasinya lebih rapi, tekstur lebih presisi, mendekati apa yang terlihat di preview.
+    const rawCanvas = await htmlToImage.toCanvas(fullNode, {
       width: EXPORT_WIDTH,
       height: EXPORT_HEIGHT,
-      pixelRatio: 1,
+      pixelRatio: 2,
       cacheBust: true
     });
+
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = EXPORT_WIDTH;
+    outCanvas.height = EXPORT_HEIGHT;
+    const ctx = outCanvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(rawCanvas, 0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+
+    const blob = await new Promise(resolve => outCanvas.toBlob(resolve, 'image/png'));
 
     captureSandbox.innerHTML = '';
 
@@ -3774,7 +3902,7 @@ Aturan wajib lainnya:
         rawText: cleanText,
         design: null,
         status: 'pending',
-        isRtl: containsArabic(cleanText),
+        isRtl: isArabicDominant(cleanText),
         contentImage: null,
         alignOverride: alignOverride,
         hasSpacer: hasSpacerToken(cleanText),
@@ -3834,7 +3962,7 @@ Aturan wajib lainnya:
     const slideNotes = slides.map((s, i) => {
       const targetAlign = resolveTextAlign(i);
       let note = `--- SLIDE ${i + 1} ---\nTeks: """${s.rawText}"""\ntext_align WAJIB untuk slide ini: "${targetAlign}" (rata ${ALIGN_LABEL_ID[targetAlign]}).`;
-      if (s.isRtl) note += `\nSlide ini mengandung karakter Arab.`;
+      if (s.isRtl) note += `\nSlide ini didominasi karakter Arab.`;
       if (s.imageFrame && s.imageFrame.position !== 'center'){
         note += `\nAda frame gambar TEPI "${s.imageFrame.position}" seluas ${s.imageFrame.size_pct}% -> "content_image_placement" WAJIB diisi persis {"position":"${s.imageFrame.position}","size_pct":${s.imageFrame.size_pct}}.`;
       } else if (s.imageFrame && s.imageFrame.position === 'center'){
@@ -3926,7 +4054,7 @@ Aturan wajib lainnya:
     slides[index].alignOverride = alignOverride;
     slides[index].hasSpacer = hasSpacerToken(cleanText);
     slides[index].imageFrame = imageFrame;
-    slides[index].isRtl = containsArabic(cleanText);
+    slides[index].isRtl = isArabicDominant(cleanText);
     slides[index].hasStructureTags = hasTags;
     slides[index].tagBlocks = hasTags ? buildBlocksFromTags(cleanText) : null;
     slides[index].lastOrderedNumber = endCounter;
